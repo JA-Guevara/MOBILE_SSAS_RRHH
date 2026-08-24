@@ -17,9 +17,11 @@ class _$TokenPairSchema extends TokenPairSchema {
   factory _$TokenPairSchema([void Function(TokenPairSchemaBuilder)? updates]) =>
       (TokenPairSchemaBuilder()..update(updates))._build();
 
-  _$TokenPairSchema._(
-      {required this.accessToken, required this.refreshToken, this.tokenType})
-      : super._();
+  _$TokenPairSchema._({
+    required this.accessToken,
+    required this.refreshToken,
+    this.tokenType,
+  }) : super._();
   @override
   TokenPairSchema rebuild(void Function(TokenPairSchemaBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -101,12 +103,19 @@ class TokenPairSchemaBuilder
   TokenPairSchema build() => _build();
 
   _$TokenPairSchema _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$TokenPairSchema._(
           accessToken: BuiltValueNullFieldError.checkNotNull(
-              accessToken, r'TokenPairSchema', 'accessToken'),
+            accessToken,
+            r'TokenPairSchema',
+            'accessToken',
+          ),
           refreshToken: BuiltValueNullFieldError.checkNotNull(
-              refreshToken, r'TokenPairSchema', 'refreshToken'),
+            refreshToken,
+            r'TokenPairSchema',
+            'refreshToken',
+          ),
           tokenType: tokenType,
         );
     replace(_$result);

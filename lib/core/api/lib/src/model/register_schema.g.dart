@@ -17,9 +17,11 @@ class _$RegisterSchema extends RegisterSchema {
   factory _$RegisterSchema([void Function(RegisterSchemaBuilder)? updates]) =>
       (RegisterSchemaBuilder()..update(updates))._build();
 
-  _$RegisterSchema._(
-      {required this.name, required this.email, required this.password})
-      : super._();
+  _$RegisterSchema._({
+    required this.name,
+    required this.email,
+    required this.password,
+  }) : super._();
   @override
   RegisterSchema rebuild(void Function(RegisterSchemaBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -101,14 +103,24 @@ class RegisterSchemaBuilder
   RegisterSchema build() => _build();
 
   _$RegisterSchema _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$RegisterSchema._(
           name: BuiltValueNullFieldError.checkNotNull(
-              name, r'RegisterSchema', 'name'),
+            name,
+            r'RegisterSchema',
+            'name',
+          ),
           email: BuiltValueNullFieldError.checkNotNull(
-              email, r'RegisterSchema', 'email'),
+            email,
+            r'RegisterSchema',
+            'email',
+          ),
           password: BuiltValueNullFieldError.checkNotNull(
-              password, r'RegisterSchema', 'password'),
+            password,
+            r'RegisterSchema',
+            'password',
+          ),
         );
     replace(_$result);
     return _$result;

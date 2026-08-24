@@ -12,16 +12,16 @@ class _$ForgotPasswordResponseSchema extends ForgotPasswordResponseSchema {
   @override
   final String? resetToken;
 
-  factory _$ForgotPasswordResponseSchema(
-          [void Function(ForgotPasswordResponseSchemaBuilder)? updates]) =>
-      (ForgotPasswordResponseSchemaBuilder()..update(updates))._build();
+  factory _$ForgotPasswordResponseSchema([
+    void Function(ForgotPasswordResponseSchemaBuilder)? updates,
+  ]) => (ForgotPasswordResponseSchemaBuilder()..update(updates))._build();
 
   _$ForgotPasswordResponseSchema._({required this.message, this.resetToken})
-      : super._();
+    : super._();
   @override
   ForgotPasswordResponseSchema rebuild(
-          void Function(ForgotPasswordResponseSchemaBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+    void Function(ForgotPasswordResponseSchemaBuilder) updates,
+  ) => (toBuilder()..update(updates)).build();
 
   @override
   ForgotPasswordResponseSchemaBuilder toBuilder() =>
@@ -55,8 +55,10 @@ class _$ForgotPasswordResponseSchema extends ForgotPasswordResponseSchema {
 
 class ForgotPasswordResponseSchemaBuilder
     implements
-        Builder<ForgotPasswordResponseSchema,
-            ForgotPasswordResponseSchemaBuilder> {
+        Builder<
+          ForgotPasswordResponseSchema,
+          ForgotPasswordResponseSchemaBuilder
+        > {
   _$ForgotPasswordResponseSchema? _$v;
 
   String? _message;
@@ -95,10 +97,14 @@ class ForgotPasswordResponseSchemaBuilder
   ForgotPasswordResponseSchema build() => _build();
 
   _$ForgotPasswordResponseSchema _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$ForgotPasswordResponseSchema._(
           message: BuiltValueNullFieldError.checkNotNull(
-              message, r'ForgotPasswordResponseSchema', 'message'),
+            message,
+            r'ForgotPasswordResponseSchema',
+            'message',
+          ),
           resetToken: resetToken,
         );
     replace(_$result);

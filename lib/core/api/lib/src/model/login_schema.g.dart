@@ -88,12 +88,19 @@ class LoginSchemaBuilder implements Builder<LoginSchema, LoginSchemaBuilder> {
   LoginSchema build() => _build();
 
   _$LoginSchema _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$LoginSchema._(
           email: BuiltValueNullFieldError.checkNotNull(
-              email, r'LoginSchema', 'email'),
+            email,
+            r'LoginSchema',
+            'email',
+          ),
           password: BuiltValueNullFieldError.checkNotNull(
-              password, r'LoginSchema', 'password'),
+            password,
+            r'LoginSchema',
+            'password',
+          ),
         );
     replace(_$result);
     return _$result;

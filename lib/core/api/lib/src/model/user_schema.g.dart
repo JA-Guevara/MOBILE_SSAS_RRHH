@@ -25,15 +25,15 @@ class _$UserSchema extends UserSchema {
   factory _$UserSchema([void Function(UserSchemaBuilder)? updates]) =>
       (UserSchemaBuilder()..update(updates))._build();
 
-  _$UserSchema._(
-      {required this.id,
-      required this.name,
-      required this.email,
-      required this.isActive,
-      required this.emailVerified,
-      this.createdAt,
-      this.updatedAt})
-      : super._();
+  _$UserSchema._({
+    required this.id,
+    required this.name,
+    required this.email,
+    required this.isActive,
+    required this.emailVerified,
+    this.createdAt,
+    this.updatedAt,
+  }) : super._();
   @override
   UserSchema rebuild(void Function(UserSchemaBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -147,17 +147,30 @@ class UserSchemaBuilder implements Builder<UserSchema, UserSchemaBuilder> {
   UserSchema build() => _build();
 
   _$UserSchema _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$UserSchema._(
           id: BuiltValueNullFieldError.checkNotNull(id, r'UserSchema', 'id'),
           name: BuiltValueNullFieldError.checkNotNull(
-              name, r'UserSchema', 'name'),
+            name,
+            r'UserSchema',
+            'name',
+          ),
           email: BuiltValueNullFieldError.checkNotNull(
-              email, r'UserSchema', 'email'),
+            email,
+            r'UserSchema',
+            'email',
+          ),
           isActive: BuiltValueNullFieldError.checkNotNull(
-              isActive, r'UserSchema', 'isActive'),
+            isActive,
+            r'UserSchema',
+            'isActive',
+          ),
           emailVerified: BuiltValueNullFieldError.checkNotNull(
-              emailVerified, r'UserSchema', 'emailVerified'),
+            emailVerified,
+            r'UserSchema',
+            'emailVerified',
+          ),
           createdAt: createdAt,
           updatedAt: updatedAt,
         );

@@ -21,13 +21,13 @@ class _$RoleSchema extends RoleSchema {
   factory _$RoleSchema([void Function(RoleSchemaBuilder)? updates]) =>
       (RoleSchemaBuilder()..update(updates))._build();
 
-  _$RoleSchema._(
-      {required this.id,
-      required this.name,
-      this.description,
-      required this.isActive,
-      this.permissions})
-      : super._();
+  _$RoleSchema._({
+    required this.id,
+    required this.name,
+    this.description,
+    required this.isActive,
+    this.permissions,
+  }) : super._();
   @override
   RoleSchema rebuild(void Function(RoleSchemaBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -128,14 +128,21 @@ class RoleSchemaBuilder implements Builder<RoleSchema, RoleSchemaBuilder> {
   _$RoleSchema _build() {
     _$RoleSchema _$result;
     try {
-      _$result = _$v ??
+      _$result =
+          _$v ??
           _$RoleSchema._(
             id: BuiltValueNullFieldError.checkNotNull(id, r'RoleSchema', 'id'),
             name: BuiltValueNullFieldError.checkNotNull(
-                name, r'RoleSchema', 'name'),
+              name,
+              r'RoleSchema',
+              'name',
+            ),
             description: description,
             isActive: BuiltValueNullFieldError.checkNotNull(
-                isActive, r'RoleSchema', 'isActive'),
+              isActive,
+              r'RoleSchema',
+              'isActive',
+            ),
             permissions: _permissions?.build(),
           );
     } catch (_) {
@@ -145,7 +152,10 @@ class RoleSchemaBuilder implements Builder<RoleSchema, RoleSchemaBuilder> {
         _permissions?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'RoleSchema', _$failedField, e.toString());
+          r'RoleSchema',
+          _$failedField,
+          e.toString(),
+        );
       }
       rethrow;
     }

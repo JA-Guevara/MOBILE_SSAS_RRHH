@@ -14,12 +14,12 @@ class _$UpdateRoleRequest extends UpdateRoleRequest {
   @override
   final bool? isActive;
 
-  factory _$UpdateRoleRequest(
-          [void Function(UpdateRoleRequestBuilder)? updates]) =>
-      (UpdateRoleRequestBuilder()..update(updates))._build();
+  factory _$UpdateRoleRequest([
+    void Function(UpdateRoleRequestBuilder)? updates,
+  ]) => (UpdateRoleRequestBuilder()..update(updates))._build();
 
   _$UpdateRoleRequest._({this.name, this.description, this.isActive})
-      : super._();
+    : super._();
   @override
   UpdateRoleRequest rebuild(void Function(UpdateRoleRequestBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -102,7 +102,8 @@ class UpdateRoleRequestBuilder
   UpdateRoleRequest build() => _build();
 
   _$UpdateRoleRequest _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$UpdateRoleRequest._(
           name: name,
           description: description,

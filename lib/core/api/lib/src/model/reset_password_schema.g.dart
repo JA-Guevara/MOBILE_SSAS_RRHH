@@ -12,16 +12,16 @@ class _$ResetPasswordSchema extends ResetPasswordSchema {
   @override
   final String newPassword;
 
-  factory _$ResetPasswordSchema(
-          [void Function(ResetPasswordSchemaBuilder)? updates]) =>
-      (ResetPasswordSchemaBuilder()..update(updates))._build();
+  factory _$ResetPasswordSchema([
+    void Function(ResetPasswordSchemaBuilder)? updates,
+  ]) => (ResetPasswordSchemaBuilder()..update(updates))._build();
 
   _$ResetPasswordSchema._({required this.token, required this.newPassword})
-      : super._();
+    : super._();
   @override
   ResetPasswordSchema rebuild(
-          void Function(ResetPasswordSchemaBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+    void Function(ResetPasswordSchemaBuilder) updates,
+  ) => (toBuilder()..update(updates)).build();
 
   @override
   ResetPasswordSchemaBuilder toBuilder() =>
@@ -93,12 +93,19 @@ class ResetPasswordSchemaBuilder
   ResetPasswordSchema build() => _build();
 
   _$ResetPasswordSchema _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$ResetPasswordSchema._(
           token: BuiltValueNullFieldError.checkNotNull(
-              token, r'ResetPasswordSchema', 'token'),
+            token,
+            r'ResetPasswordSchema',
+            'token',
+          ),
           newPassword: BuiltValueNullFieldError.checkNotNull(
-              newPassword, r'ResetPasswordSchema', 'newPassword'),
+            newPassword,
+            r'ResetPasswordSchema',
+            'newPassword',
+          ),
         );
     replace(_$result);
     return _$result;

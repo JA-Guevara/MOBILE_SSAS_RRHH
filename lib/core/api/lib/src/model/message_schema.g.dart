@@ -37,9 +37,9 @@ class _$MessageSchema extends MessageSchema {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper(r'MessageSchema')
-          ..add('message', message))
-        .toString();
+    return (newBuiltValueToStringHelper(
+      r'MessageSchema',
+    )..add('message', message)).toString();
   }
 }
 
@@ -78,10 +78,14 @@ class MessageSchemaBuilder
   MessageSchema build() => _build();
 
   _$MessageSchema _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$MessageSchema._(
           message: BuiltValueNullFieldError.checkNotNull(
-              message, r'MessageSchema', 'message'),
+            message,
+            r'MessageSchema',
+            'message',
+          ),
         );
     replace(_$result);
     return _$result;

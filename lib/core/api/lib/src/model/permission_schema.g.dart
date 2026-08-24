@@ -18,17 +18,17 @@ class _$PermissionSchema extends PermissionSchema {
   @override
   final String? description;
 
-  factory _$PermissionSchema(
-          [void Function(PermissionSchemaBuilder)? updates]) =>
-      (PermissionSchemaBuilder()..update(updates))._build();
+  factory _$PermissionSchema([
+    void Function(PermissionSchemaBuilder)? updates,
+  ]) => (PermissionSchemaBuilder()..update(updates))._build();
 
-  _$PermissionSchema._(
-      {required this.id,
-      required this.name,
-      required this.resource,
-      required this.action,
-      this.description})
-      : super._();
+  _$PermissionSchema._({
+    required this.id,
+    required this.name,
+    required this.resource,
+    required this.action,
+    this.description,
+  }) : super._();
   @override
   PermissionSchema rebuild(void Function(PermissionSchemaBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -127,16 +127,29 @@ class PermissionSchemaBuilder
   PermissionSchema build() => _build();
 
   _$PermissionSchema _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$PermissionSchema._(
           id: BuiltValueNullFieldError.checkNotNull(
-              id, r'PermissionSchema', 'id'),
+            id,
+            r'PermissionSchema',
+            'id',
+          ),
           name: BuiltValueNullFieldError.checkNotNull(
-              name, r'PermissionSchema', 'name'),
+            name,
+            r'PermissionSchema',
+            'name',
+          ),
           resource: BuiltValueNullFieldError.checkNotNull(
-              resource, r'PermissionSchema', 'resource'),
+            resource,
+            r'PermissionSchema',
+            'resource',
+          ),
           action: BuiltValueNullFieldError.checkNotNull(
-              action, r'PermissionSchema', 'action'),
+            action,
+            r'PermissionSchema',
+            'action',
+          ),
           description: description,
         );
     replace(_$result);

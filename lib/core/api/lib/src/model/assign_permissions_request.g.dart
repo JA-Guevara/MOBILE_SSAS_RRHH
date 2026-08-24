@@ -10,15 +10,15 @@ class _$AssignPermissionsRequest extends AssignPermissionsRequest {
   @override
   final BuiltList<String> permissionIds;
 
-  factory _$AssignPermissionsRequest(
-          [void Function(AssignPermissionsRequestBuilder)? updates]) =>
-      (AssignPermissionsRequestBuilder()..update(updates))._build();
+  factory _$AssignPermissionsRequest([
+    void Function(AssignPermissionsRequestBuilder)? updates,
+  ]) => (AssignPermissionsRequestBuilder()..update(updates))._build();
 
   _$AssignPermissionsRequest._({required this.permissionIds}) : super._();
   @override
   AssignPermissionsRequest rebuild(
-          void Function(AssignPermissionsRequestBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+    void Function(AssignPermissionsRequestBuilder) updates,
+  ) => (toBuilder()..update(updates)).build();
 
   @override
   AssignPermissionsRequestBuilder toBuilder() =>
@@ -41,9 +41,9 @@ class _$AssignPermissionsRequest extends AssignPermissionsRequest {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper(r'AssignPermissionsRequest')
-          ..add('permissionIds', permissionIds))
-        .toString();
+    return (newBuiltValueToStringHelper(
+      r'AssignPermissionsRequest',
+    )..add('permissionIds', permissionIds)).toString();
   }
 }
 
@@ -87,10 +87,9 @@ class AssignPermissionsRequestBuilder
   _$AssignPermissionsRequest _build() {
     _$AssignPermissionsRequest _$result;
     try {
-      _$result = _$v ??
-          _$AssignPermissionsRequest._(
-            permissionIds: permissionIds.build(),
-          );
+      _$result =
+          _$v ??
+          _$AssignPermissionsRequest._(permissionIds: permissionIds.build());
     } catch (_) {
       late String _$failedField;
       try {
@@ -98,7 +97,10 @@ class AssignPermissionsRequestBuilder
         permissionIds.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
-            r'AssignPermissionsRequest', _$failedField, e.toString());
+          r'AssignPermissionsRequest',
+          _$failedField,
+          e.toString(),
+        );
       }
       rethrow;
     }

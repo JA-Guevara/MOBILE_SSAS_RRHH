@@ -10,15 +10,15 @@ class _$RefreshTokenSchema extends RefreshTokenSchema {
   @override
   final String refreshToken;
 
-  factory _$RefreshTokenSchema(
-          [void Function(RefreshTokenSchemaBuilder)? updates]) =>
-      (RefreshTokenSchemaBuilder()..update(updates))._build();
+  factory _$RefreshTokenSchema([
+    void Function(RefreshTokenSchemaBuilder)? updates,
+  ]) => (RefreshTokenSchemaBuilder()..update(updates))._build();
 
   _$RefreshTokenSchema._({required this.refreshToken}) : super._();
   @override
   RefreshTokenSchema rebuild(
-          void Function(RefreshTokenSchemaBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+    void Function(RefreshTokenSchemaBuilder) updates,
+  ) => (toBuilder()..update(updates)).build();
 
   @override
   RefreshTokenSchemaBuilder toBuilder() =>
@@ -40,9 +40,9 @@ class _$RefreshTokenSchema extends RefreshTokenSchema {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper(r'RefreshTokenSchema')
-          ..add('refreshToken', refreshToken))
-        .toString();
+    return (newBuiltValueToStringHelper(
+      r'RefreshTokenSchema',
+    )..add('refreshToken', refreshToken)).toString();
   }
 }
 
@@ -81,10 +81,14 @@ class RefreshTokenSchemaBuilder
   RefreshTokenSchema build() => _build();
 
   _$RefreshTokenSchema _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$RefreshTokenSchema._(
           refreshToken: BuiltValueNullFieldError.checkNotNull(
-              refreshToken, r'RefreshTokenSchema', 'refreshToken'),
+            refreshToken,
+            r'RefreshTokenSchema',
+            'refreshToken',
+          ),
         );
     replace(_$result);
     return _$result;

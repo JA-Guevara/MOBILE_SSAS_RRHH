@@ -12,9 +12,9 @@ class _$CreateRoleRequest extends CreateRoleRequest {
   @override
   final String? description;
 
-  factory _$CreateRoleRequest(
-          [void Function(CreateRoleRequestBuilder)? updates]) =>
-      (CreateRoleRequestBuilder()..update(updates))._build();
+  factory _$CreateRoleRequest([
+    void Function(CreateRoleRequestBuilder)? updates,
+  ]) => (CreateRoleRequestBuilder()..update(updates))._build();
 
   _$CreateRoleRequest._({required this.name, this.description}) : super._();
   @override
@@ -91,10 +91,14 @@ class CreateRoleRequestBuilder
   CreateRoleRequest build() => _build();
 
   _$CreateRoleRequest _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$CreateRoleRequest._(
           name: BuiltValueNullFieldError.checkNotNull(
-              name, r'CreateRoleRequest', 'name'),
+            name,
+            r'CreateRoleRequest',
+            'name',
+          ),
           description: description,
         );
     replace(_$result);

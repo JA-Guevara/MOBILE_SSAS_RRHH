@@ -10,15 +10,15 @@ class _$ForgotPasswordSchema extends ForgotPasswordSchema {
   @override
   final String email;
 
-  factory _$ForgotPasswordSchema(
-          [void Function(ForgotPasswordSchemaBuilder)? updates]) =>
-      (ForgotPasswordSchemaBuilder()..update(updates))._build();
+  factory _$ForgotPasswordSchema([
+    void Function(ForgotPasswordSchemaBuilder)? updates,
+  ]) => (ForgotPasswordSchemaBuilder()..update(updates))._build();
 
   _$ForgotPasswordSchema._({required this.email}) : super._();
   @override
   ForgotPasswordSchema rebuild(
-          void Function(ForgotPasswordSchemaBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+    void Function(ForgotPasswordSchemaBuilder) updates,
+  ) => (toBuilder()..update(updates)).build();
 
   @override
   ForgotPasswordSchemaBuilder toBuilder() =>
@@ -40,9 +40,9 @@ class _$ForgotPasswordSchema extends ForgotPasswordSchema {
 
   @override
   String toString() {
-    return (newBuiltValueToStringHelper(r'ForgotPasswordSchema')
-          ..add('email', email))
-        .toString();
+    return (newBuiltValueToStringHelper(
+      r'ForgotPasswordSchema',
+    )..add('email', email)).toString();
   }
 }
 
@@ -81,10 +81,14 @@ class ForgotPasswordSchemaBuilder
   ForgotPasswordSchema build() => _build();
 
   _$ForgotPasswordSchema _build() {
-    final _$result = _$v ??
+    final _$result =
+        _$v ??
         _$ForgotPasswordSchema._(
           email: BuiltValueNullFieldError.checkNotNull(
-              email, r'ForgotPasswordSchema', 'email'),
+            email,
+            r'ForgotPasswordSchema',
+            'email',
+          ),
         );
     replace(_$result);
     return _$result;
