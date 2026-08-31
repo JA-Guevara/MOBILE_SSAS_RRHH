@@ -39,6 +39,14 @@ dependencies:
   dio: ^5.11.0
   flutter_secure_storage: ^11.0.0
   go_router: ^17.5.0
+  # Cliente HTTP de AppHttpClient y de los servicios de T1-18 y T1-20.
+  # Se usa http y no dart:io porque dart:io no existe en el navegador y las
+  # capturas de evidencia se toman con `flutter run -d chrome`.
+  http: ^1.6.0
+  # T1-20: elegir el archivo del CV desde el teléfono o el disco.
+  file_picker: ^12.1.2
+  # T1-20: MediaType del CV en el envío multipart del formulario.
+  http_parser: ^4.1.2
 
 dev_dependencies:
   flutter_test:
