@@ -1,13 +1,22 @@
 import 'dart:convert';
-import 'dart:io';
+
+import 'package:http/http.dart' as http;
 
 import '../../core/errors/app_exception.dart';
 
+/// Cliente HTTP de la app.
+///
+/// Usa `package:http` y NO `dart:io`. La razón es que `dart:io` no existe en
+/// el navegador: con él, `flutter run -d chrome` ni siquiera compila, y las
+/// capturas de evidencia se toman en Chrome. `package:http` funciona igual
+/// en web, Android, iOS y Windows, y ya estaba en pubspec.yaml.
+///
+/// La API pública no cambió: get, post y close se usan igual que antes.
 class AppHttpClient {
-  AppHttpClient({required this.baseUrl, HttpClient? client})
-    : _client = client ?? HttpClient();
+  AppHttpClient({required this.baseUrl, http.Client? client})
+    : _client = client ?? http.Client();
   final String baseUrl;
-  final HttpClient _client;
+  final http.Client _client;
 
   Future<Object?> get(String path, {String? accessToken}) =>
       _request('GET', path, accessToken: accessToken);
@@ -24,18 +33,25 @@ class AppHttpClient {
     String? accessToken,
   }) async {
     try {
-      final request = await _client.openUrl(method, Uri.parse('$baseUrl$path'));
-      request.headers.contentType = ContentType.json;
-      if (accessToken != null) {
-        request.headers.set(
-          HttpHeaders.authorizationHeader,
-          'Bearer $accessToken',
-        );
-      }
-      if (body != null) request.write(jsonEncode(body));
-      final response = await request.close();
-      final rawBody = await response.transform(utf8.decoder).join();
+      final uri = Uri.parse('$baseUrl$path');
+      final headers = <String, String>{
+        'content-type': 'application/json; charset=utf-8',
+        if (accessToken != null) 'authorization': 'Bearer $accessToken',
+      };
+
+      final response = method == 'GET'
+          ? await _client.get(uri, headers: headers)
+          : await _client.post(
+              uri,
+              headers: headers,
+              body: body == null ? null : jsonEncode(body),
+            );
+
+      // Se decodifica en UTF-8 a mano: response.body usa latin1 cuando el
+      // servidor no manda charset, y ahí se rompen las tildes y las ñ.
+      final rawBody = utf8.decode(response.bodyBytes);
       final data = rawBody.isEmpty ? null : jsonDecode(rawBody);
+
       if (response.statusCode < 200 || response.statusCode >= 300) {
         final message = data is Map<String, dynamic>
             ? data['detail']?.toString() ?? 'La solicitud no pudo completarse.'
@@ -50,5 +66,5 @@ class AppHttpClient {
     }
   }
 
-  void close() => _client.close(force: true);
+  void close() => _client.close();
 }
