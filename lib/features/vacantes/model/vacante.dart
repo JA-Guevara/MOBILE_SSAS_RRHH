@@ -12,6 +12,12 @@ class Vacante {
   final String? modalidad;
   final String? ubicacion;
   final DateTime? fechaCierre;
+  
+  // Nuevos campos para el detalle (T1-19)
+  final String? descripcion;
+  final List<String>? requisitos;
+  final List<String>? beneficios;
+  final double? salario;
 
   const Vacante({
     required this.id,
@@ -19,6 +25,10 @@ class Vacante {
     this.modalidad,
     this.ubicacion,
     this.fechaCierre,
+    this.descripcion,
+    this.requisitos,
+    this.beneficios,
+    this.salario,
   });
 
   /// Construye una Vacante a partir del JSON del backend.
@@ -30,6 +40,12 @@ class Vacante {
       modalidad: json['modalidad'] as String?,
       ubicacion: json['ubicacion'] as String?,
       fechaCierre: _parseFecha(json['fecha_cierre']),
+      descripcion: json['descripcion'] as String?,
+      // Mapeo seguro de listas
+      requisitos: (json['requisitos'] as List<dynamic>?)?.map((e) => e.toString()).toList(),
+      beneficios: (json['beneficios'] as List<dynamic>?)?.map((e) => e.toString()).toList(),
+      // El salario puede venir null o como número
+      salario: (json['salario'] as num?)?.toDouble(),
     );
   }
 

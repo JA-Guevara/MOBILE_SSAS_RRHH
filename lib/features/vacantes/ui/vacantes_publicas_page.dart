@@ -6,6 +6,8 @@ import 'package:mobile_ssas_rrhh/features/postulaciones/ui/postulacion_page.dart
 import 'package:mobile_ssas_rrhh/features/vacantes/model/vacante.dart';
 import 'package:mobile_ssas_rrhh/features/vacantes/ui/widgets/vacante_card.dart';
 import 'package:mobile_ssas_rrhh/features/vacantes/data/vacantes_service.dart';
+import 'package:mobile_ssas_rrhh/features/vacantes/ui/vacante_detalle_screen.dart';
+import 'package:mobile_ssas_rrhh/features/postulaciones/ui/mi_postulacion_page.dart';
 
 /// Pantalla del portal público de empleos (T1-18).
 /// Muestra las vacantes de una empresa identificada por su slug.
@@ -55,17 +57,27 @@ class _VacantesPublicasPageState extends State<VacantesPublicasPage> {
 
   /// T1-20: abre el formulario de postulación de la vacante tocada.
   void _abrirPostulacion(Vacante vacante) {
-    final servicio = widget.postulacionesService;
-    if (servicio == null) return;
-
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => PostulacionPage(
-          slug: widget.slug,
-          empresaNombre: widget.empresaNombre,
+        builder: (_) => VacanteDetalleScreen(
           vacanteId: vacante.id,
-          vacanteTitulo: vacante.titulo,
-          service: servicio,
+          onPostular: () {
+            // Esta es la pantalla de tu compañera (T1-20)
+            final servicio = widget.postulacionesService;
+            if (servicio == null) return;
+
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => PostulacionPage(
+                  slug: widget.slug,
+                  empresaNombre: widget.empresaNombre,
+                  vacanteId: vacante.id,
+                  vacanteTitulo: vacante.titulo,
+                  service: servicio,
+                ),
+              ),
+            );
+          },
         ),
       ),
     );
@@ -74,6 +86,19 @@ class _VacantesPublicasPageState extends State<VacantesPublicasPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          // Navegamos a tu nueva pantalla T1-21
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => const MiPostulacionScreen(), // Asegúrate de que el nombre coincida con tu clase
+            ),
+          );
+        },
+        icon: const Icon(Icons.search, color: Colors.white),
+        label: const Text('Rastrear', style: TextStyle(color: Colors.white)),
+        backgroundColor: const Color(0xFF0D4A22), // Verde institucional
+      ),
       body: Column(
         children: [
           _Cabecera(empresaNombre: widget.empresaNombre),

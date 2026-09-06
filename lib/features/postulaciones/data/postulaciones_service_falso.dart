@@ -3,6 +3,7 @@ import 'package:mobile_ssas_rrhh/features/postulaciones/model/cv_adjunto.dart';
 import 'package:mobile_ssas_rrhh/features/postulaciones/model/postulante.dart';
 import 'package:mobile_ssas_rrhh/features/postulaciones/model/resultado_postulacion.dart';
 
+
 /// Servicios FALSOS para desarrollar sin backend, igual que en vacantes.
 ///
 /// Sirven para dos cosas:
@@ -17,6 +18,20 @@ import 'package:mobile_ssas_rrhh/features/postulaciones/model/resultado_postulac
 
 /// Acepta la postulación y devuelve un código de seguimiento de ejemplo,
 /// el mismo de la maqueta. Para la captura "con datos".
+
+class PostulacionEstado {
+  final String codigo;
+  final String vacanteTitulo;
+  final String etapaActual;
+  final String estado;
+
+  PostulacionEstado({
+    required this.codigo,
+    required this.vacanteTitulo,
+    required this.etapaActual,
+    required this.estado,
+  });
+}
 class PostulacionesServiceFalso extends PostulacionesService {
   PostulacionesServiceFalso() : super(baseUrl: 'falso');
 
@@ -34,6 +49,23 @@ class PostulacionesServiceFalso extends PostulacionesService {
       codigoSeguimiento: 'TX-8F4K2',
       mensaje: 'Recibimos tu postulación. Te escribiremos a tu correo.',
     );
+  }
+  Future<PostulacionEstado> consultarEstado(String codigo) async {
+    await Future.delayed(const Duration(seconds: 1)); 
+
+    final codigoLimpio = codigo.trim().toUpperCase();
+
+    // Usamos el mismo código que generó tu compañera arriba
+    if (codigoLimpio == 'TX-8F4K2') {
+      return PostulacionEstado(
+        codigo: 'TX-8F4K2',
+        vacanteTitulo: 'Desarrollador Backend',
+        etapaActual: 'Revisión Técnica',
+        estado: 'En Progreso',
+      );
+    } 
+
+    throw Exception('No se encontró ninguna postulación con el código $codigoLimpio.');
   }
 }
 

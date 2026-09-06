@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_ssas_rrhh/features/auth/screens/login_screen.dart';
+import 'package:mobile_ssas_rrhh/features/vacantes/ui/vacante_detalle_screen.dart';
 // Comentado hasta crear los archivos fisicos
 // import '../../features/auth/screens/login_screen.dart';
 // import '../../features/auth/screens/register_screen.dart';

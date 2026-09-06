@@ -29,6 +29,17 @@ class VacantesServiceFalso extends VacantesService {
         'modalidad': 'Híbrido',
         'ubicacion': 'Santa Cruz',
         'fecha_cierre': '2026-09-10',
+        'descripcion': 'Buscamos un Desarrollador Backend proactivo para unirse a nuestro equipo. Serás responsable de diseñar, construir y mantener APIs robustas usando Python y Django.',
+        'requisitos': [
+          'Experiencia comprobable de 2+ años en desarrollo Backend.',
+          'Dominio de Python y framework Django.',
+          'Conocimiento en bases de datos PostgreSQL y Git.'
+        ],
+        'beneficios': [
+          'Seguro de salud privado.',
+          'Horarios flexibles.'
+        ],
+        'salario': null, // Probando la condición de ClickUp: no se mostrará
       }),
       Vacante.fromJson({
         'id': 2,
@@ -36,11 +47,27 @@ class VacantesServiceFalso extends VacantesService {
         'modalidad': 'Presencial',
         'ubicacion': 'Santa Cruz',
         'fecha_cierre': '2026-09-15',
+        'descripcion': 'Buscamos Auxiliar Contable con atención al detalle para el área de finanzas.',
+        'requisitos': [
+          'Estudiante de últimos semestres o egresado de Contaduría Pública.',
+          'Manejo de Excel intermedio/avanzado.'
+        ],
+        'beneficios': [
+          'Capacitación constante.',
+          'Buen clima laboral.'
+        ],
+        'salario': 3500.00, // Este sí se mostrará en la UI
       }),
     ];
   }
-}
 
+  // MÉTODO NUEVO PARA T1-19: Obtiene el detalle simulado usando el ID
+  Future<Vacante> obtenerDetalle(int id) async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    final lista = await vacantesPublicas('falso');
+    return lista.firstWhere((v) => v.id == id, orElse: () => throw Exception('Vacante no encontrada'));
+  }
+}
 /// Devuelve una lista vacía: para la captura del estado "sin vacantes".
 class VacantesServiceVacio extends VacantesService {
   VacantesServiceVacio() : super(baseUrl: 'falso');
