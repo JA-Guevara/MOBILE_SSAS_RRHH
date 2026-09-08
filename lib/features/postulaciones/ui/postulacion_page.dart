@@ -40,7 +40,7 @@ enum _Estado {
 class PostulacionPage extends StatefulWidget {
   final String slug;
   final String empresaNombre;
-  final int vacanteId;
+  final String vacanteId;
   final String vacanteTitulo;
   final PostulacionesService service;
 

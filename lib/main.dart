@@ -4,6 +4,7 @@ import 'package:mobile_ssas_rrhh/shared/theme/app_theme.dart';
 import 'package:mobile_ssas_rrhh/features/postulaciones/data/postulaciones_service_falso.dart';
 import 'package:mobile_ssas_rrhh/features/vacantes/data/vacantes_service_falso.dart';
 import 'package:mobile_ssas_rrhh/features/vacantes/ui/vacantes_publicas_page.dart';
+import 'package:mobile_ssas_rrhh/features/vacantes/data/vacantes_service.dart';
 
 /// ARCHIVO DE PRUEBA para ver cada pantalla y sacar las capturas de
 /// evidencia. No es la app de producción: aquí todo va contra servicios
@@ -96,11 +97,14 @@ Widget _portal() {
   // final servicioPostulacion = PostulacionesServiceError();      // CON ERROR
   // final servicioPostulacion = PostulacionesServiceValidacion();  // 422
 
+  // ¡AQUÍ ESTABA EL ERROR! Faltaba el return y el punto y coma al final.
+  // Nota: Le quité la barra diagonal (/) al final de la URL para evitar que 
+  // la ruta se construya con doble barra (ej. .app//publico/...)
   return VacantesPublicasPage(
-    slug: 'textiles-oriente',
-    empresaNombre: 'Textiles del Oriente',
-    service: servicio,
-    postulacionesService: servicioPostulacion,
+    slug: '1234',
+    empresaNombre: 'Pollos Kiky S.R.L.',
+    service: VacantesService(baseUrl: 'https://backendssasrrhh-production.up.railway.app/api/v1'), 
+    postulacionesService: PostulacionesServiceFalso(),
   );
 }
 

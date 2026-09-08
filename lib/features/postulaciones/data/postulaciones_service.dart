@@ -22,7 +22,7 @@ class PostulacionesService {
 
   Future<ResultadoPostulacion> postular({
     required String slug,
-    required int vacanteId,
+    required String vacanteId,
     required Postulante postulante,
     required CvAdjunto cv,
   }) async {

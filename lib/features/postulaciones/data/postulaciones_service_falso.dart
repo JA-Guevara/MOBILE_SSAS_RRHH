@@ -3,7 +3,6 @@ import 'package:mobile_ssas_rrhh/features/postulaciones/model/cv_adjunto.dart';
 import 'package:mobile_ssas_rrhh/features/postulaciones/model/postulante.dart';
 import 'package:mobile_ssas_rrhh/features/postulaciones/model/resultado_postulacion.dart';
 
-
 /// Servicios FALSOS para desarrollar sin backend, igual que en vacantes.
 ///
 /// Sirven para dos cosas:
@@ -32,13 +31,14 @@ class PostulacionEstado {
     required this.estado,
   });
 }
+
 class PostulacionesServiceFalso extends PostulacionesService {
   PostulacionesServiceFalso() : super(baseUrl: 'falso');
 
   @override
   Future<ResultadoPostulacion> postular({
     required String slug,
-    required int vacanteId,
+    required String vacanteId,
     required Postulante postulante,
     required CvAdjunto cv,
   }) async {
@@ -50,6 +50,7 @@ class PostulacionesServiceFalso extends PostulacionesService {
       mensaje: 'Recibimos tu postulación. Te escribiremos a tu correo.',
     );
   }
+
   Future<PostulacionEstado> consultarEstado(String codigo) async {
     await Future.delayed(const Duration(seconds: 1)); 
 
@@ -76,7 +77,7 @@ class PostulacionesServiceError extends PostulacionesService {
   @override
   Future<ResultadoPostulacion> postular({
     required String slug,
-    required int vacanteId,
+    required String vacanteId, // <--- CORREGIDO: Ahora es String
     required Postulante postulante,
     required CvAdjunto cv,
   }) async {
@@ -98,7 +99,7 @@ class PostulacionesServiceValidacion extends PostulacionesService {
   @override
   Future<ResultadoPostulacion> postular({
     required String slug,
-    required int vacanteId,
+    required String vacanteId, // <--- CORREGIDO: Ahora es String
     required Postulante postulante,
     required CvAdjunto cv,
   }) async {

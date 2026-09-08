@@ -4,13 +4,14 @@ import '../data/vacantes_service_falso.dart';
 // Ajusta las rutas de los imports según dónde hayas guardado la pantalla
 
 class VacanteDetalleScreen extends StatefulWidget {
-  final int vacanteId; // Recibimos el ID de la vacante
+  // 1. CORRECCIÓN: El ID ahora es String (UUID)
+  final String vacanteId; 
   final VoidCallback onPostular;
 
   const VacanteDetalleScreen({
     super.key, 
     required this.vacanteId,
-    required this.onPostular, // 2. LO PEDIMOS EN EL CONSTRUCTOR
+    required this.onPostular,
   });
   @override
   State<VacanteDetalleScreen> createState() => _VacanteDetalleScreenState();
@@ -23,8 +24,9 @@ class _VacanteDetalleScreenState extends State<VacanteDetalleScreen> {
 
   bool _isApplying = false;
 
-  // Llama al servicio que actualizamos
   Future<Vacante> _fetchVacanteDetalle() async {
+    // Nota: Si usas el servicio falso aún, asegúrate de que reciba un String.
+    // Si ya cambiaste al real, usa tu nuevo VacantesService aquí.
     return await VacantesServiceFalso().obtenerDetalle(widget.vacanteId);
   }
 
@@ -42,6 +44,14 @@ class _VacanteDetalleScreenState extends State<VacanteDetalleScreen> {
       );
       Navigator.pop(context);
     }
+  }
+
+  // 3. CORRECCIÓN: Función auxiliar para armar el texto del salario
+  String _formatearSalario(double? min, double? max) {
+    if (min != null && max != null) return 'Bs. ${min.toStringAsFixed(0)} - ${max.toStringAsFixed(0)}';
+    if (min != null) return 'A partir de Bs. ${min.toStringAsFixed(0)}';
+    if (max != null) return 'Hasta Bs. ${max.toStringAsFixed(0)}';
+    return 'Salario a convenir';
   }
 
   @override
@@ -88,25 +98,31 @@ class _VacanteDetalleScreenState extends State<VacanteDetalleScreen> {
                       
                       const Padding(padding: EdgeInsets.symmetric(vertical: 24.0), child: Divider()),
 
-                      if (vacante.descripcion != null) ...[
+                      if (vacante.descripcion != null && vacante.descripcion!.trim().isNotEmpty) ...[
                         _buildSectionTitle('Descripción del Puesto'),
                         Text(vacante.descripcion!, style: const TextStyle(color: Colors.black54, height: 1.5, fontSize: 16)),
                         const SizedBox(height: 24),
                       ],
 
-                      if (vacante.requisitos != null && vacante.requisitos!.isNotEmpty) ...[
+                      // 2. CORRECCIÓN: Separamos el bloque de texto por saltos de línea (\n)
+                      if (vacante.requisitos != null && vacante.requisitos!.trim().isNotEmpty) ...[
                         _buildSectionTitle('Requisitos'),
-                        ...vacante.requisitos!.map((req) => _buildBulletPoint(req)),
+                        ...vacante.requisitos!.split('\n')
+                            .where((req) => req.trim().isNotEmpty)
+                            .map((req) => _buildBulletPoint(req.trim())),
                         const SizedBox(height: 24),
                       ],
 
-                      if (vacante.beneficios != null && vacante.beneficios!.isNotEmpty) ...[
+                      if (vacante.beneficios != null && vacante.beneficios!.trim().isNotEmpty) ...[
                         _buildSectionTitle('Beneficios'),
-                        ...vacante.beneficios!.map((ben) => _buildBulletPoint(ben)),
+                        ...vacante.beneficios!.split('\n')
+                            .where((ben) => ben.trim().isNotEmpty)
+                            .map((ben) => _buildBulletPoint(ben.trim())),
                         const SizedBox(height: 24),
                       ],
 
-                      if (vacante.salario != null) ...[
+                      // 3. CORRECCIÓN: Validamos mostrarSalario y usamos los nuevos campos
+                      if (vacante.mostrarSalario && (vacante.salarioMin != null || vacante.salarioMax != null)) ...[
                         _buildSectionTitle('Salario Ofertado'),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -120,7 +136,7 @@ class _VacanteDetalleScreenState extends State<VacanteDetalleScreen> {
                               Icon(Icons.monetization_on_outlined, color: primaryDarkGreen),
                               const SizedBox(width: 8),
                               Text(
-                                'Bs. ${vacante.salario!.toStringAsFixed(2)}',
+                                _formatearSalario(vacante.salarioMin, vacante.salarioMax),
                                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: primaryDarkGreen),
                               ),
                             ],
