@@ -2,6 +2,13 @@ import 'package:flutter/material.dart';
 
 import 'package:mobile_ssas_rrhh/shared/theme/app_theme.dart';
 import 'package:mobile_ssas_rrhh/features/postulaciones/data/postulaciones_service_falso.dart';
+import 'package:mobile_ssas_rrhh/features/ranking/data/ranking_service_falso.dart';
+import 'package:mobile_ssas_rrhh/features/ranking/ui/ranking_page.dart';
+import 'package:mobile_ssas_rrhh/features/seguimiento/data/seguimiento_service_falso.dart';
+import 'package:mobile_ssas_rrhh/features/seguimiento/ui/consulta_codigo_page.dart';
+// Lo usan las líneas comentadas del bloque MODO del portal (las capturas
+// VACÍA y CON ERROR). Se queda aunque ahora mismo no se lea.
+// ignore: unused_import
 import 'package:mobile_ssas_rrhh/features/vacantes/data/vacantes_service_falso.dart';
 import 'package:mobile_ssas_rrhh/features/vacantes/ui/vacantes_publicas_page.dart';
 import 'package:mobile_ssas_rrhh/features/vacantes/data/vacantes_service.dart';
@@ -24,15 +31,17 @@ import 'package:mobile_ssas_rrhh/features/vacantes/data/vacantes_service.dart';
 ///   puedes comentar el bloque MODO que quieras sin romper nada: ninguna
 ///   otra pantalla lee sus variables.
 ///
-///   En esta rama solo vive el Sprint 1 (T1-18 y T1-20). Las pantallas de
-///   los sprints 2, 3 y 4 llegan en sus propios PR, y cada una añade tres
-///   cosas: su valor al enum [Pantalla], su línea al mapa [pantallas] y su
-///   bloque MODO. Nada más.
+///   En esta rama viven el Sprint 1 (T1-18 y T1-20, ya en main) y el
+///   Sprint 2 (T2-18 y T2-20). Las pantallas de los sprints 3 y 4 llegan en
+///   sus propios PR, y cada una añade tres cosas: su valor al enum
+///   [Pantalla], su línea al mapa [pantallas] y su bloque MODO. Nada más.
 void main() {
   // ============ MODO · con qué pantalla arranca la app =============
   // CAMBIA SOLO ESTA LÍNEA. Descomenta UNA:
 
-  const pantalla = Pantalla.portal; //       T1-18 y T1-20
+  const pantalla = Pantalla.seguimiento; // T2-18
+  // const pantalla = Pantalla.ranking;     // T2-20
+  // const pantalla = Pantalla.portal;      // T1-18 y T1-20
 
   // =================================================================
 
@@ -40,7 +49,7 @@ void main() {
 }
 
 /// Con qué pantalla arranca la app de prueba.
-enum Pantalla { portal }
+enum Pantalla { portal, seguimiento, ranking }
 
 /// Qué función construye cada pantalla.
 ///
@@ -55,6 +64,8 @@ enum Pantalla { portal }
 /// que todas están aquí y que todas se dibujan.
 final Map<Pantalla, Widget Function()> pantallas = {
   Pantalla.portal: _portal,
+  Pantalla.seguimiento: _seguimiento,
+  Pantalla.ranking: _ranking,
 };
 
 class AppSSAH extends StatelessWidget {
@@ -88,7 +99,12 @@ class AppSSAH extends StatelessWidget {
 /// Descomenta UNA sola línea de cada grupo:
 Widget _portal() {
   // --- la lista de vacantes (T1-18) ---
-  final servicio = VacantesServiceFalso(); // captura 1: CON DATOS
+  // Contra el backend real de la empresa Conecta. Sin barra al final de la
+  // URL, para que la ruta no se arme con doble barra (ej. .app//publico/...).
+  final servicio = VacantesService(
+    baseUrl: 'https://backendssasrrhh-production.up.railway.app/api/v1',
+  );
+  // final servicio = VacantesServiceFalso();   // captura 1: CON DATOS
   // final servicio = VacantesServiceVacio();   // captura 2: VACÍA
   // final servicio = VacantesServiceError();   // captura 3: CON ERROR
 
@@ -97,14 +113,40 @@ Widget _portal() {
   // final servicioPostulacion = PostulacionesServiceError();      // CON ERROR
   // final servicioPostulacion = PostulacionesServiceValidacion();  // 422
 
-  // ¡AQUÍ ESTABA EL ERROR! Faltaba el return y el punto y coma al final.
-  // Nota: Le quité la barra diagonal (/) al final de la URL para evitar que 
-  // la ruta se construya con doble barra (ej. .app//publico/...)
   return VacantesPublicasPage(
     slug: '1234',
     empresaNombre: 'Pollos Kiky S.R.L.',
-    service: VacantesService(baseUrl: 'https://backendssasrrhh-production.up.railway.app/api/v1'), 
-    postulacionesService: PostulacionesServiceFalso(),
+    service: servicio,
+    postulacionesService: servicioPostulacion,
+  );
+}
+
+/// ========= MODO · línea de tiempo de la postulación (T2-18) ======
+/// Descomenta UNA sola línea:
+Widget _seguimiento() {
+  final servicio = SeguimientoServiceFalso(); // CON DATOS
+  // final servicio = SeguimientoServiceVacio();  // CÓDIGO NO EXISTE
+  // final servicio = SeguimientoServiceError();  // CON ERROR
+
+  return ConsultaCodigoPage(
+    service: servicio,
+    // Precargado para no tener que teclearlo en cada captura.
+    codigoInicial: 'TX-8F4K2',
+  );
+}
+
+/// ============ MODO · ranking del reclutador (T2-20) ==============
+/// Descomenta UNA sola línea:
+Widget _ranking() {
+  final servicio = RankingServiceFalso(); // CON DATOS
+  // final servicio = RankingServiceVacio();      // SIN POSTULANTES
+  // final servicio = RankingServiceError();      // CON ERROR
+  // final servicio = RankingServiceSinSesion();  // SESIÓN EXPIRADA
+
+  return RankingPage(
+    vacanteId: 1,
+    vacanteTitulo: 'Desarrollador Backend',
+    service: servicio,
   );
 }
 
