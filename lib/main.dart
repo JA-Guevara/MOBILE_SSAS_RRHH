@@ -98,13 +98,11 @@ class AppSSAH extends StatelessWidget {
 /// Toca una tarjeta de vacante para abrir el formulario de postulación.
 /// Descomenta UNA sola línea de cada grupo:
 Widget _portal() {
-  // --- la lista de vacantes (T1-18) ---
-  // Contra el backend real de la empresa Conecta. Sin barra al final de la
-  // URL, para que la ruta no se arme con doble barra (ej. .app//publico/...).
-  final servicio = VacantesService(
-    baseUrl: 'https://backendssasrrhh-production.up.railway.app/api/v1',
-  );
-  // final servicio = VacantesServiceFalso();   // captura 1: CON DATOS
+
+  //final servicio = VacantesService(
+  //  baseUrl: 'https://backendssasrrhh-production.up.railway.app/api/v1',
+  //);
+   final servicio = VacantesServiceFalso();   // captura 1: CON DATOS
   // final servicio = VacantesServiceVacio();   // captura 2: VACÍA
   // final servicio = VacantesServiceError();   // captura 3: CON ERROR
 
