@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'package:mobile_ssas_rrhh/shared/theme/app_theme.dart';
+import 'package:mobile_ssas_rrhh/features/entrevista/data/entrevista_service_falso.dart';
+import 'package:mobile_ssas_rrhh/features/entrevista/ui/consulta_entrevista_page.dart';
 import 'package:mobile_ssas_rrhh/features/postulaciones/data/postulaciones_service_falso.dart';
 import 'package:mobile_ssas_rrhh/features/ranking/data/ranking_service_falso.dart';
 import 'package:mobile_ssas_rrhh/features/ranking/ui/ranking_page.dart';
@@ -39,8 +41,10 @@ void main() {
   // ============ MODO · con qué pantalla arranca la app =============
   // CAMBIA SOLO ESTA LÍNEA. Descomenta UNA:
 
-  const pantalla = Pantalla.seguimiento; // T2-18
+  const pantalla = Pantalla.menu; // TODAS: menú para elegir cualquiera
+  // const pantalla = Pantalla.seguimiento; // T2-18
   // const pantalla = Pantalla.ranking;     // T2-20
+  // const pantalla = Pantalla.entrevista;  // T2-19
   // const pantalla = Pantalla.portal;      // T1-18 y T1-20
 
   // =================================================================
@@ -49,7 +53,7 @@ void main() {
 }
 
 /// Con qué pantalla arranca la app de prueba.
-enum Pantalla { portal, seguimiento, ranking }
+enum Pantalla { menu, portal, seguimiento, ranking, entrevista }
 
 /// Qué función construye cada pantalla.
 ///
@@ -63,9 +67,11 @@ enum Pantalla { portal, seguimiento, ranking }
 /// test/main_pantallas_test.dart, que recorre `Pantalla.values` y comprueba
 /// que todas están aquí y que todas se dibujan.
 final Map<Pantalla, Widget Function()> pantallas = {
+  Pantalla.menu: _menu,
   Pantalla.portal: _portal,
   Pantalla.seguimiento: _seguimiento,
   Pantalla.ranking: _ranking,
+  Pantalla.entrevista: _entrevista,
 };
 
 class AppSSAH extends StatelessWidget {
@@ -98,11 +104,10 @@ class AppSSAH extends StatelessWidget {
 /// Toca una tarjeta de vacante para abrir el formulario de postulación.
 /// Descomenta UNA sola línea de cada grupo:
 Widget _portal() {
-
   //final servicio = VacantesService(
   //  baseUrl: 'https://backendssasrrhh-production.up.railway.app/api/v1',
   //);
-   final servicio = VacantesServiceFalso();   // captura 1: CON DATOS
+  final servicio = VacantesServiceFalso(); // captura 1: CON DATOS
   // final servicio = VacantesServiceVacio();   // captura 2: VACÍA
   // final servicio = VacantesServiceError();   // captura 3: CON ERROR
 
@@ -146,6 +151,71 @@ Widget _ranking() {
     vacanteTitulo: 'Desarrollador Backend',
     service: servicio,
   );
+}
+
+/// ========= MODO · confirmar entrevista desde el móvil (T2-19) =========
+/// El backend todavía no tiene entrevistas (T2-02): solo servicios falsos.
+/// Descomenta UNA sola línea:
+Widget _entrevista() {
+  final servicio = EntrevistaServiceFalso(); // POR CONFIRMAR (virtual)
+  // final servicio = EntrevistaServicePresencial();        // POR CONFIRMAR (presencial)
+  // final servicio = EntrevistaServiceConfirmada();        // YA CONFIRMADA
+  // final servicio = EntrevistaServiceVacio();             // SIN ENTREVISTA
+  // final servicio = EntrevistaServiceError();             // CON ERROR
+  // final servicio = EntrevistaServiceErrorAlConfirmar();  // FALLA AL CONFIRMAR
+
+  return ConsultaEntrevistaPage(
+    service: servicio,
+    // Formato real del backend, precargado para las capturas.
+    codigoInicial: 'POST-8F4K2A1C',
+  );
+}
+
+/// ============== MODO · menú con todas las pantallas ===============
+/// Abre cualquier pantalla con un toque y vuelve aquí con "atrás".
+/// El estado de cada una (con datos, vacía, error...) se sigue eligiendo
+/// en su propio bloque MODO.
+Widget _menu() => const _MenuPantallas();
+
+/// Título que se ve en el menú para cada pantalla.
+const _titulosMenu = {
+  Pantalla.portal: ('Portal de vacantes y postulación', 'T1-18 · T1-20'),
+  Pantalla.seguimiento: ('Seguimiento de postulación', 'T2-18'),
+  Pantalla.ranking: ('Ranking del reclutador', 'T2-20'),
+  Pantalla.entrevista: ('Confirmar entrevista', 'T2-19'),
+};
+
+class _MenuPantallas extends StatelessWidget {
+  const _MenuPantallas();
+
+  @override
+  Widget build(BuildContext context) {
+    final opciones = Pantalla.values.where((p) => p != Pantalla.menu);
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('SSAH · Pantallas de prueba')),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          for (final p in opciones)
+            Card(
+              child: ListTile(
+                title: Text(_titulosMenu[p]?.$1 ?? p.name),
+                subtitle: Text(_titulosMenu[p]?.$2 ?? ''),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) =>
+                        pantallas[p]?.call() ??
+                        _PantallaNoConfigurada(pantalla: p),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 }
 
 /// Lo que se ve si eliges una pantalla cuyo bloque MODO está comentado.
