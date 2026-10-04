@@ -18,6 +18,7 @@ class SeguimientoPostulacion {
   final String empresaNombre;
 
   final String? estado;
+  final String? etapaActual;
   final double? puntajeIa;
   final double? puntajeManual;
   final String? notas;
@@ -38,6 +39,7 @@ class SeguimientoPostulacion {
     required this.empresaNombre,
     required this.etapas,
     this.estado,
+    this.etapaActual,
     this.puntajeIa,
     this.puntajeManual,
     this.notas,
@@ -68,9 +70,12 @@ class SeguimientoPostulacion {
     return SeguimientoPostulacion(
       id: (cuerpo['id'] as num?)?.toInt() ?? 0,
       codigoSeguimiento: (cuerpo['codigo_seguimiento'] ?? '').toString(),
-      vacanteTitulo: _anidado(cuerpo, 'vacante', 'titulo', 'vacante_titulo'),
+      vacanteTitulo: cuerpo['vacante'] is String
+          ? cuerpo['vacante'] as String
+          : _anidado(cuerpo, 'vacante', 'titulo', 'vacante_titulo'),
       empresaNombre: _anidado(cuerpo, 'empresa', 'nombre', 'empresa_nombre'),
       estado: cuerpo['estado'] as String?,
+      etapaActual: cuerpo['etapa'] as String?,
       puntajeIa: (cuerpo['puntaje_ia'] as num?)?.toDouble(),
       puntajeManual: (cuerpo['puntaje_manual'] as num?)?.toDouble(),
       notas: cuerpo['notas'] as String?,

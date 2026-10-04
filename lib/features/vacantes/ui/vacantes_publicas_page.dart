@@ -7,7 +7,8 @@ import 'package:mobile_ssas_rrhh/features/vacantes/model/vacante.dart';
 import 'package:mobile_ssas_rrhh/features/vacantes/ui/widgets/vacante_card.dart';
 import 'package:mobile_ssas_rrhh/features/vacantes/data/vacantes_service.dart';
 import 'package:mobile_ssas_rrhh/features/vacantes/ui/vacante_detalle_screen.dart';
-import 'package:mobile_ssas_rrhh/features/postulaciones/ui/mi_postulacion_page.dart';
+import 'package:mobile_ssas_rrhh/features/seguimiento/data/seguimiento_service.dart';
+import 'package:mobile_ssas_rrhh/features/seguimiento/ui/consulta_codigo_page.dart';
 
 /// Pantalla del portal público de empleos (T1-18).
 /// Muestra las vacantes de una empresa identificada por su slug.
@@ -27,6 +28,10 @@ class VacantesPublicasPage extends StatefulWidget {
   /// Servicio de la pantalla de postulación (T1-20). Si es null, tocar una
   /// tarjeta no hace nada: útil para capturar solo esta pantalla.
   final PostulacionesService? postulacionesService;
+  final SeguimientoService? seguimientoService;
+  final VoidCallback? onCambiarEmpresa;
+  final VoidCallback? onAccesoPersonal;
+  final VoidCallback? onVerEntrevista;
 
   const VacantesPublicasPage({
     super.key,
@@ -34,6 +39,10 @@ class VacantesPublicasPage extends StatefulWidget {
     required this.empresaNombre,
     required this.service,
     this.postulacionesService,
+    this.seguimientoService,
+    this.onCambiarEmpresa,
+    this.onAccesoPersonal,
+    this.onVerEntrevista,
   });
 
   @override
@@ -55,12 +64,24 @@ class _VacantesPublicasPageState extends State<VacantesPublicasPage> {
     });
   }
 
+  Future<void> _recargar() async {
+    final siguiente = widget.service.vacantesPublicas(widget.slug);
+    setState(() => _futuro = siguiente);
+    try {
+      await siguiente;
+    } on Exception {
+      // FutureBuilder presenta el error y deja disponible el botón de reintento.
+    }
+  }
+
   /// T1-20: abre el formulario de postulación de la vacante tocada.
   void _abrirPostulacion(Vacante vacante) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => VacanteDetalleScreen(
           vacanteId: vacante.id,
+          slug: widget.slug,
+          service: widget.service,
           onPostular: () {
             // Esta es la pantalla de tu compañera (T1-20)
             final servicio = widget.postulacionesService;
@@ -74,6 +95,7 @@ class _VacantesPublicasPageState extends State<VacantesPublicasPage> {
                   vacanteId: vacante.id,
                   vacanteTitulo: vacante.titulo,
                   service: servicio,
+                  seguimientoService: widget.seguimientoService,
                 ),
               ),
             );
@@ -87,21 +109,21 @@ class _VacantesPublicasPageState extends State<VacantesPublicasPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          // Navegamos a tu nueva pantalla T1-21
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => const MiPostulacionScreen(), // Asegúrate de que el nombre coincida con tu clase
-            ),
-          );
-        },
+        onPressed: widget.seguimientoService == null ? null : () => Navigator.of(context).push(
+          MaterialPageRoute<void>(builder: (_) => ConsultaCodigoPage(service: widget.seguimientoService!)),
+        ),
         icon: const Icon(Icons.search, color: Colors.white),
         label: const Text('Rastrear', style: TextStyle(color: Colors.white)),
         backgroundColor: const Color(0xFF0D4A22), // Verde institucional
       ),
       body: Column(
         children: [
-          _Cabecera(empresaNombre: widget.empresaNombre),
+          _Cabecera(
+            empresaNombre: widget.empresaNombre,
+            onCambiarEmpresa: widget.onCambiarEmpresa,
+            onAccesoPersonal: widget.onAccesoPersonal,
+            onVerEntrevista: widget.onVerEntrevista,
+          ),
           Expanded(
             child: FutureBuilder<List<Vacante>>(
               future: _futuro,
@@ -127,7 +149,7 @@ class _VacantesPublicasPageState extends State<VacantesPublicasPage> {
                 // Estado 2: con datos
                 return RefreshIndicator(
                   color: AppColors.verde600,
-                  onRefresh: () async => _cargar(),
+                  onRefresh: _recargar,
                   child: ListView.builder(
                     padding: const EdgeInsets.all(16),
                     itemCount: vacantes.length,
@@ -148,7 +170,11 @@ class _VacantesPublicasPageState extends State<VacantesPublicasPage> {
 
 class _Cabecera extends StatelessWidget {
   final String empresaNombre;
-  const _Cabecera({required this.empresaNombre});
+  final VoidCallback? onCambiarEmpresa;
+  final VoidCallback? onAccesoPersonal;
+  final VoidCallback? onVerEntrevista;
+  const _Cabecera({required this.empresaNombre, this.onCambiarEmpresa,
+    this.onAccesoPersonal, this.onVerEntrevista});
 
   @override
   Widget build(BuildContext context) {
@@ -156,22 +182,46 @@ class _Cabecera extends StatelessWidget {
       width: double.infinity,
       color: AppColors.verde950,
       padding: const EdgeInsets.fromLTRB(20, 56, 20, 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Text(
-            'SSAH · $empresaNombre',
-            style: const TextStyle(color: Color(0xFF8FB49C), fontSize: 12),
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            'Portal de empleos',
-            style: TextStyle(
-              fontFamily: 'serif',
-              color: Colors.white,
-              fontSize: 22,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'SSAH · $empresaNombre',
+                  style: const TextStyle(color: Color(0xFF8FB49C), fontSize: 12),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Portal de empleos',
+                  style: TextStyle(
+                    fontFamily: 'serif',
+                    color: Colors.white,
+                    fontSize: 22,
+                  ),
+                ),
+              ],
             ),
           ),
+          if (onCambiarEmpresa != null)
+            IconButton(
+              onPressed: onCambiarEmpresa,
+              tooltip: 'Cambiar empresa',
+              icon: const Icon(Icons.swap_horiz, color: Colors.white),
+            ),
+          if (onAccesoPersonal != null)
+            IconButton(
+              onPressed: onAccesoPersonal,
+              tooltip: 'Acceso de personal',
+              icon: const Icon(Icons.badge_outlined, color: Colors.white),
+            ),
+          if (onVerEntrevista != null)
+            IconButton(
+              onPressed: onVerEntrevista,
+              tooltip: 'Mi entrevista',
+              icon: const Icon(Icons.event_available_outlined, color: Colors.white),
+            ),
         ],
       ),
     );

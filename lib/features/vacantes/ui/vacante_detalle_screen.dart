@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 import '../model/vacante.dart';
-import '../data/vacantes_service_falso.dart'; 
-// Ajusta las rutas de los imports según dónde hayas guardado la pantalla
+import '../data/vacantes_service.dart';
 
 class VacanteDetalleScreen extends StatefulWidget {
-  // 1. CORRECCIÓN: El ID ahora es String (UUID)
-  final String vacanteId; 
+  final String vacanteId;
+  final String slug;
+  final VacantesService service;
   final VoidCallback onPostular;
 
   const VacanteDetalleScreen({
     super.key, 
     required this.vacanteId,
+    required this.slug,
+    required this.service,
     required this.onPostular,
   });
   @override
@@ -22,28 +24,16 @@ class _VacanteDetalleScreenState extends State<VacanteDetalleScreen> {
   final Color accentLightGreen = const Color(0xFFD4E7C5);
   final Color backgroundColor = const Color(0xFFF8F9FA);
 
-  bool _isApplying = false;
+  late Future<Vacante> _detalle;
 
-  Future<Vacante> _fetchVacanteDetalle() async {
-    // Nota: Si usas el servicio falso aún, asegúrate de que reciba un String.
-    // Si ya cambiaste al real, usa tu nuevo VacantesService aquí.
-    return await VacantesServiceFalso().obtenerDetalle(widget.vacanteId);
+  @override
+  void initState() {
+    super.initState();
+    _cargar();
   }
 
-  void _postular() async {
-    setState(() => _isApplying = true);
-    await Future.delayed(const Duration(seconds: 2));
-    setState(() => _isApplying = false);
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('¡Postulación enviada con éxito!'),
-          backgroundColor: Colors.green,
-        ),
-      );
-      Navigator.pop(context);
-    }
+  void _cargar() {
+    _detalle = widget.service.obtenerDetalle(widget.slug, widget.vacanteId);
   }
 
   // 3. CORRECCIÓN: Función auxiliar para armar el texto del salario
@@ -66,12 +56,15 @@ class _VacanteDetalleScreenState extends State<VacanteDetalleScreen> {
         centerTitle: true,
       ),
       body: FutureBuilder<Vacante>(
-        future: _fetchVacanteDetalle(),
+        future: _detalle,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator(color: primaryDarkGreen));
           } else if (snapshot.hasError) {
-            return const Center(child: Text('Error al cargar la vacante.'));
+            return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+              const Text('No se pudo cargar la vacante.'),
+              TextButton(onPressed: () => setState(_cargar), child: const Text('Reintentar')),
+            ]));
           } else if (!snapshot.hasData) {
             return const Center(child: Text('Vacante no encontrada.'));
           }
@@ -104,7 +97,6 @@ class _VacanteDetalleScreenState extends State<VacanteDetalleScreen> {
                         const SizedBox(height: 24),
                       ],
 
-                      // 2. CORRECCIÓN: Separamos el bloque de texto por saltos de línea (\n)
                       if (vacante.requisitos != null && vacante.requisitos!.trim().isNotEmpty) ...[
                         _buildSectionTitle('Requisitos'),
                         ...vacante.requisitos!.split('\n')
@@ -121,13 +113,12 @@ class _VacanteDetalleScreenState extends State<VacanteDetalleScreen> {
                         const SizedBox(height: 24),
                       ],
 
-                      // 3. CORRECCIÓN: Validamos mostrarSalario y usamos los nuevos campos
                       if (vacante.mostrarSalario && (vacante.salarioMin != null || vacante.salarioMax != null)) ...[
                         _buildSectionTitle('Salario Ofertado'),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                           decoration: BoxDecoration(
-                            color: accentLightGreen.withOpacity(0.3),
+                            color: accentLightGreen.withValues(alpha: 0.3),
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(color: accentLightGreen),
                           ),
@@ -151,7 +142,7 @@ class _VacanteDetalleScreenState extends State<VacanteDetalleScreen> {
               
               Container(
                 padding: const EdgeInsets.all(24.0),
-                decoration: BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), offset: const Offset(0, -4), blurRadius: 10)]),
+                decoration: BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), offset: const Offset(0, -4), blurRadius: 10)]),
                 child: SafeArea(
                   child: SizedBox(
                     width: double.infinity,

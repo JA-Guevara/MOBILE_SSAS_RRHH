@@ -1,5 +1,23 @@
 # mobile_ssas_rrhh
 
+## Portal público real (CU-09, CU-10 y CU-11)
+
+La app abre el portal público conectado al backend. Si no se define `EMPRESA_SLUG`, pide el slug de la empresa al iniciar. Para una compilación de prueba con una empresa fija:
+
+```bash
+flutter run --dart-define=EMPRESA_SLUG=<slug-del-portal>
+```
+
+La API usa por defecto `https://backendssasrrhh-production-7c33.up.railway.app/api/v1`. Para otro entorno:
+
+```bash
+flutter run --dart-define=API_BASE_URL=https://tu-backend/api/v1 --dart-define=EMPRESA_SLUG=<slug-del-portal>
+```
+
+El slug es la parte de la URL pública de empleos que identifica a la empresa; no es el código de inicio de sesión. No pongas claves secretas ni tokens en `--dart-define`. Antes de distribuir una APK, verificar que el backend y el slug sean los correctos, ejecutar `flutter analyze` y `flutter test`, probar postulación y seguimiento en un teléfono y configurar la firma Android de publicación.
+
+Los servicios falsos siguen disponibles únicamente para pruebas y capturas de demostración. El menú de demostración se activa explícitamente con `--dart-define=DEMO_MODE=true`; no es el arranque normal de la app.
+
 A new Flutter project.
 
 ## Getting Started
@@ -19,16 +37,15 @@ samples, guidance on mobile development, and a full API reference.
 
 ---
 
-## Cómo tomar capturas
+## Capturas con servicios falsos (modo demo)
 
-Las capturas de pantalla son la evidencia de las tareas. Todas se toman
-contra **servicios falsos**: el backend todavía no tiene estos endpoints, así
-que no hace falta ni internet ni iniciar sesión.
+Este modo conserva las pantallas y servicios falsos de las pruebas originales.
+No representa el funcionamiento de la app conectada a Railway.
 
 ### El comando
 
 ```bash
-flutter run -d chrome
+flutter run -d chrome --dart-define=DEMO_MODE=true
 ```
 
 Con la app abierta en Chrome, cada vez que guardes `lib/main.dart` pulsa `r`

@@ -66,6 +66,7 @@ class CampoSeleccion extends StatelessWidget {
   final String etiqueta;
   final String? valor;
   final List<String> opciones;
+  final Map<String, String> etiquetas;
   final ValueChanged<String?> onCambio;
   final String textoVacio;
   final bool habilitado;
@@ -75,6 +76,7 @@ class CampoSeleccion extends StatelessWidget {
     required this.etiqueta,
     required this.valor,
     required this.opciones,
+    this.etiquetas = const {},
     required this.onCambio,
     this.textoVacio = 'Sin especificar',
     this.habilitado = true,
@@ -104,7 +106,7 @@ class CampoSeleccion extends StatelessWidget {
                 ),
               ),
               ...opciones.map(
-                (o) => DropdownMenuItem<String?>(value: o, child: Text(o)),
+                (o) => DropdownMenuItem<String?>(value: o, child: Text(etiquetas[o] ?? o)),
               ),
             ],
           ),

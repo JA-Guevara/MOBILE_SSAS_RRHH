@@ -8,12 +8,12 @@ import 'package:mobile_ssas_rrhh/features/postulaciones/model/postulante.dart';
 import 'package:mobile_ssas_rrhh/features/postulaciones/model/resultado_postulacion.dart';
 
 /// Registra una postulación en el portal público de empleos (T1-20).
-/// Es PÚBLICO: no requiere token ni empresa; el slug identifica a la empresa.
+/// Es público: no requiere token; la vacante identifica a la empresa.
 ///
 /// El envío es multipart porque lleva el CV junto con los datos del
 /// postulante en una sola petición.
 class PostulacionesService {
-  /// Sin barra final. Confirma en /docs si el prefijo es /api/v1 o no.
+  /// URL base con el prefijo /api/v1.
   final String baseUrl;
   final http.Client _client;
 
@@ -26,16 +26,15 @@ class PostulacionesService {
     required Postulante postulante,
     required CvAdjunto cv,
   }) async {
-    // >>> VERIFICA esta ruta en /docs. <<<
-    final uri = Uri.parse(
-      '$baseUrl/publico/$slug/vacantes/$vacanteId/postulaciones',
-    );
+    final uri = Uri.parse(baseUrl).replace(pathSegments: [
+      ...Uri.parse(baseUrl).pathSegments.where((segment) => segment.isNotEmpty),
+      'publico', 'postulaciones',
+    ]);
 
     final req = http.MultipartRequest('POST', uri)
-      ..fields.addAll(postulante.toFields())
+      ..fields.addAll({...postulante.toFields(), 'vacante_id': vacanteId})
       ..files.add(
         http.MultipartFile.fromBytes(
-          // >>> VERIFICA el nombre de esta parte en /docs ('cv' o 'archivo'). <<<
           'cv',
           cv.bytes,
           filename: cv.nombre,
@@ -43,18 +42,26 @@ class PostulacionesService {
         ),
       );
 
-    final res = await http.Response.fromStream(await _client.send(req));
+    final res = await http.Response.fromStream(
+      await _client.send(req).timeout(const Duration(seconds: 45)),
+    );
 
     // utf8.decode conserva las tildes correctamente.
     final cuerpo = res.bodyBytes.isEmpty ? '' : utf8.decode(res.bodyBytes);
 
     if (res.statusCode == 200 || res.statusCode == 201) {
       final data = jsonDecode(cuerpo);
-      return ResultadoPostulacion.fromJson(data as Map<String, dynamic>);
+      final resultado = ResultadoPostulacion.fromJson(data as Map<String, dynamic>);
+      if (resultado.codigoSeguimiento.isEmpty) {
+        throw PostulacionException(502, 'El servidor no devolvió el código de seguimiento.');
+      }
+      return resultado;
     }
 
     throw PostulacionException.desdeRespuesta(res.statusCode, cuerpo);
   }
+
+  void close() => _client.close();
 }
 
 /// Error de la postulación. El backend es la autoridad: si rechaza algún
@@ -78,7 +85,9 @@ class PostulacionException implements Exception {
     final generico = switch (statusCode) {
       400 || 422 => 'Revisa los datos del formulario.',
       404 => 'La vacante ya no está disponible.',
+      409 => 'Ya existe una postulación a esta vacante.',
       413 => 'El archivo es demasiado grande.',
+      503 => 'No se pudo guardar el CV. Inténtalo más tarde.',
       _ => 'No se pudo enviar la postulación (código $statusCode).',
     };
 

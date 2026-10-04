@@ -73,6 +73,23 @@ void main() {
     expect(find.byType(VacanteCard), findsNothing);
   });
 
+  testWidgets('permite cambiar de empresa desde el encabezado', (tester) async {
+    var cambios = 0;
+    await tester.pumpWidget(MaterialApp(
+      theme: AppTheme.light,
+      home: VacantesPublicasPage(
+        slug: '2222',
+        empresaNombre: 'Farmacorp',
+        service: VacantesServiceFalso(),
+        onCambiarEmpresa: () => cambios++,
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Cambiar empresa'));
+    expect(cambios, 1);
+  });
+
   testWidgets('error: mensaje y Reintentar', (tester) async {
     await tester.pumpWidget(_app(VacantesServiceError()));
     await tester.pumpAndSettle();
@@ -85,17 +102,16 @@ void main() {
     expect(find.byType(VacanteCard), findsNothing);
   });
 
-  testWidgets('sin servicio de postulación, tocar una tarjeta no navega', (
+  testWidgets('tocar una tarjeta abre el detalle de la vacante', (
     tester,
   ) async {
-    // La pantalla se puede capturar sola: postulacionesService es opcional.
     await tester.pumpWidget(_app(VacantesServiceFalso()));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Desarrollador Backend'));
     await tester.pumpAndSettle();
 
-    // Seguimos en el portal: no se abrió ningún formulario.
-    expect(find.text('Portal de empleos'), findsOneWidget);
+    expect(find.text('Detalle de Vacante'), findsOneWidget);
+    expect(find.text('Descripción del Puesto'), findsOneWidget);
   });
 }

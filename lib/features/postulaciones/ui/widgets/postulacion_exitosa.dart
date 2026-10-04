@@ -5,18 +5,20 @@ import 'package:mobile_ssas_rrhh/features/postulaciones/model/resultado_postulac
 import 'package:mobile_ssas_rrhh/shared/theme/app_theme.dart';
 
 /// Pantalla de confirmación: muestra el CÓDIGO DE SEGUIMIENTO que devolvió
-/// el backend (ej. TX-8F4K2). Con ese código el candidato consulta su estado
+/// el backend (ej. POST-A1B2C3D4). Con ese código el candidato consulta su estado
 /// desde la web o la app, así que se puede copiar de un toque.
 class PostulacionExitosa extends StatelessWidget {
   final ResultadoPostulacion resultado;
   final String vacanteTitulo;
   final VoidCallback onVolver;
+  final VoidCallback? onConsultar;
 
   const PostulacionExitosa({
     super.key,
     required this.resultado,
     required this.vacanteTitulo,
     required this.onVolver,
+    this.onConsultar,
   });
 
   @override
@@ -89,10 +91,14 @@ class PostulacionExitosa extends StatelessWidget {
             ],
           ),
         ),
+        if (onConsultar != null) ...[
+          const SizedBox(height: 16),
+          ElevatedButton(onPressed: onConsultar, child: const Text('Consultar mi postulación')),
+        ],
         const SizedBox(height: 16),
         ElevatedButton(
           onPressed: onVolver,
-          child: const Text('Volver a las vacantes'),
+          child: const Text('Volver a la vacante'),
         ),
       ],
     );
@@ -126,15 +132,14 @@ class _Codigo extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          SelectableText(
+          Flexible(child: SelectableText(
             codigo,
             style: const TextStyle(
-              fontSize: 24,
-              letterSpacing: 2,
+              fontSize: 19,
               fontWeight: FontWeight.w600,
               color: AppColors.tinta,
             ),
-          ),
+          )),
           const SizedBox(width: 8),
           IconButton(
             tooltip: 'Copiar código',

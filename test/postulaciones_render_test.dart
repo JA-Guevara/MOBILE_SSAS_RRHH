@@ -26,7 +26,7 @@ Widget _app(PostulacionesService service) => MaterialApp(
   home: PostulacionPage(
     slug: 'textiles-oriente',
     empresaNombre: 'Textiles del Oriente',
-    vacanteId: 1,
+    vacanteId: '1',
     vacanteTitulo: 'Desarrollador Backend',
     service: service,
   ),
@@ -100,7 +100,7 @@ void main() {
   test('el servicio falso acepta la postulación y devuelve el código', () async {
     final resultado = await PostulacionesServiceFalso().postular(
       slug: 'textiles-oriente',
-      vacanteId: 1,
+      vacanteId: '1',
       postulante: _postulante,
       cv: _cv(),
     );
@@ -113,7 +113,7 @@ void main() {
     await expectLater(
       PostulacionesServiceError().postular(
         slug: 'textiles-oriente',
-        vacanteId: 1,
+        vacanteId: '1',
         postulante: _postulante,
         cv: _cv(),
       ),
@@ -133,7 +133,7 @@ void main() {
     await expectLater(
       PostulacionesServiceValidacion().postular(
         slug: 'textiles-oriente',
-        vacanteId: 1,
+        vacanteId: '1',
         postulante: _postulante,
         cv: _cv(),
       ),
@@ -187,6 +187,12 @@ void main() {
     expect(find.textContaining('Ingresa tus nombres'), findsOneWidget);
     expect(find.textContaining('Ingresa tus apellidos'), findsOneWidget);
     expect(find.textContaining('Ingresa tu correo'), findsOneWidget);
+    expect(find.textContaining('Ingresa tu CI'), findsOneWidget);
+    expect(find.textContaining('Ingresa tu teléfono'), findsOneWidget);
+    expect(find.textContaining('Ingresa tu ciudad'), findsOneWidget);
+    expect(find.textContaining('Selecciona tu nivel educativo'), findsOneWidget);
+    expect(find.textContaining('Ingresa tus años de experiencia'), findsOneWidget);
+    expect(find.textContaining('Debes autorizar el uso de tus datos'), findsOneWidget);
     // El CV no vive dentro del Form, así que se reclama aparte.
     expect(find.textContaining('Adjunta tu hoja de vida'), findsOneWidget);
 

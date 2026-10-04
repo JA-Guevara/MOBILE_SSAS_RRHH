@@ -35,11 +35,6 @@ class _ConsultaCodigoPageState extends State<ConsultaCodigoPage> {
     text: widget.codigoInicial ?? '',
   );
 
-  /// >>> VERIFICA contra /docs <<<  El formato TX-XXXXX sale de la maqueta
-  /// (TX-8F4K2). Si el backend genera códigos de otro largo o alfabeto,
-  /// esta expresión es lo único que hay que ajustar.
-  static final _formato = RegExp(r'^TX-[A-Z0-9]{5}$');
-
   var _autovalidar = false;
 
   @override
@@ -51,8 +46,8 @@ class _ConsultaCodigoPageState extends State<ConsultaCodigoPage> {
   String? _validarCodigo(String? valor) {
     final v = (valor ?? '').trim();
     if (v.isEmpty) return 'Ingresa tu código de seguimiento.';
-    if (!_formato.hasMatch(v)) {
-      return 'El código se ve así: TX-8F4K2.';
+    if (v.length > 40) {
+      return 'El código es demasiado largo.';
     }
     return null;
   }
@@ -64,7 +59,7 @@ class _ConsultaCodigoPageState extends State<ConsultaCodigoPage> {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => SeguimientoPage(
-          codigo: _codigo.text.trim(),
+          codigo: _codigo.text.trim().toUpperCase(),
           service: widget.service,
         ),
       ),
@@ -110,13 +105,13 @@ class _ConsultaCodigoPageState extends State<ConsultaCodigoPage> {
                           etiqueta: 'Código de seguimiento',
                           controller: _codigo,
                           obligatorio: true,
-                          ayuda: 'formato TX-8F4K2',
+                          ayuda: 'ej. POST-A1B2C3D4',
                           accionTeclado: TextInputAction.done,
                           formateadores: [
                             // El código siempre va en mayúsculas: se convierte
                             // mientras se escribe para no rechazarlo por eso.
                             _AMayusculas(),
-                            LengthLimitingTextInputFormatter(8),
+                            LengthLimitingTextInputFormatter(40),
                           ],
                           validador: _validarCodigo,
                         ),

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_ssas_rrhh/app/public_app.dart';
+import 'package:mobile_ssas_rrhh/core/constants/app_constants.dart';
 
 import 'package:mobile_ssas_rrhh/shared/theme/app_theme.dart';
 import 'package:mobile_ssas_rrhh/features/entrevista/data/entrevista_service_falso.dart';
@@ -13,11 +15,9 @@ import 'package:mobile_ssas_rrhh/features/seguimiento/ui/consulta_codigo_page.da
 // ignore: unused_import
 import 'package:mobile_ssas_rrhh/features/vacantes/data/vacantes_service_falso.dart';
 import 'package:mobile_ssas_rrhh/features/vacantes/ui/vacantes_publicas_page.dart';
-import 'package:mobile_ssas_rrhh/features/vacantes/data/vacantes_service.dart';
 
-/// ARCHIVO DE PRUEBA para ver cada pantalla y sacar las capturas de
-/// evidencia. No es la app de producción: aquí todo va contra servicios
-/// FALSOS, porque el backend todavía no tiene estos endpoints.
+/// La app pública real arranca por defecto. El resto de este archivo conserva
+/// el menú de pantallas con servicios falsos para DEMO_MODE y pruebas.
 ///
 /// CÓMO USARLO:
 ///   1. Elige la pantalla en el bloque MODO de más abajo (UNA línea).
@@ -38,6 +38,10 @@ import 'package:mobile_ssas_rrhh/features/vacantes/data/vacantes_service.dart';
 ///   sus propios PR, y cada una añade tres cosas: su valor al enum
 ///   [Pantalla], su línea al mapa [pantallas] y su bloque MODO. Nada más.
 void main() {
+  if (!AppConstants.demoMode) {
+    runApp(const PublicApp());
+    return;
+  }
   // ============ MODO · con qué pantalla arranca la app =============
   // CAMBIA SOLO ESTA LÍNEA. Descomenta UNA:
 

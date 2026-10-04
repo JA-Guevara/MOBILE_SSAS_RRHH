@@ -7,9 +7,7 @@ import 'package:mobile_ssas_rrhh/features/seguimiento/model/seguimiento_postulac
 /// Consulta el estado de una postulación con su código de seguimiento (T2-18).
 /// Es PÚBLICO: no requiere token ni empresa; el código identifica la postulación.
 ///
-/// >>> VERIFICA contra /docs <<<  Este endpoint TODAVÍA NO EXISTE en el
-/// backend. La ruta de abajo es una propuesta del equipo móvil; en cuanto
-/// rrhh-api la publique, se ajusta aquí y nada más de la app cambia.
+/// El backend devuelve el estado y la etapa actuales por código.
 class SeguimientoService {
   /// Sin barra final. Confirma en /docs si el prefijo es /api/v1 o no.
   final String baseUrl;
@@ -21,10 +19,12 @@ class SeguimientoService {
   /// Devuelve null cuando el código no existe (404). Ese null es el estado
   /// "vacío" de la pantalla, igual que la lista vacía en T1-18.
   Future<SeguimientoPostulacion?> porCodigo(String codigo) async {
-    // >>> VERIFICA esta ruta en /docs. <<<
-    final uri = Uri.parse('$baseUrl/publico/postulaciones/$codigo');
+    final uri = Uri.parse(baseUrl).replace(pathSegments: [
+      ...Uri.parse(baseUrl).pathSegments.where((segment) => segment.isNotEmpty),
+      'publico', 'postulaciones', codigo.trim().toUpperCase(),
+    ]);
 
-    final res = await _client.get(uri);
+    final res = await _client.get(uri).timeout(const Duration(seconds: 20));
 
     if (res.statusCode == 200) {
       // utf8.decode conserva las tildes correctamente.
@@ -41,6 +41,8 @@ class SeguimientoService {
       'No se pudo consultar tu postulación (código ${res.statusCode}).',
     );
   }
+
+  void close() => _client.close();
 }
 
 /// Error al consultar el seguimiento. Se define aquí, dentro de la feature,

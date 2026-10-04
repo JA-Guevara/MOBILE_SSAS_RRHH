@@ -8,6 +8,8 @@ import 'package:mobile_ssas_rrhh/features/postulaciones/model/resultado_postulac
 import 'package:mobile_ssas_rrhh/features/postulaciones/ui/widgets/campo_formulario.dart';
 import 'package:mobile_ssas_rrhh/features/postulaciones/ui/widgets/postulacion_exitosa.dart';
 import 'package:mobile_ssas_rrhh/features/postulaciones/ui/widgets/selector_cv.dart';
+import 'package:mobile_ssas_rrhh/features/seguimiento/data/seguimiento_service.dart';
+import 'package:mobile_ssas_rrhh/features/seguimiento/ui/consulta_codigo_page.dart';
 import 'package:mobile_ssas_rrhh/shared/theme/app_theme.dart';
 
 /// Estados de la pantalla, igual que en vacantes.
@@ -43,6 +45,7 @@ class PostulacionPage extends StatefulWidget {
   final String vacanteId;
   final String vacanteTitulo;
   final PostulacionesService service;
+  final SeguimientoService? seguimientoService;
 
   const PostulacionPage({
     super.key,
@@ -51,6 +54,7 @@ class PostulacionPage extends StatefulWidget {
     required this.vacanteId,
     required this.vacanteTitulo,
     required this.service,
+    this.seguimientoService,
   });
 
   @override
@@ -70,16 +74,18 @@ class _PostulacionPageState extends State<PostulacionPage> {
   final _aniosExperiencia = TextEditingController();
   final _linkedin = TextEditingController();
 
-  /// >>> VERIFICA estos valores contra el backend antes de la demo. <<<
   static const _nivelesEducativos = [
-    'Secundaria',
-    'Técnico',
-    'Universitario en curso',
-    'Licenciatura',
-    'Maestría',
-    'Doctorado',
+    'SECUNDARIA', 'TECNICO', 'LICENCIATURA', 'MAESTRIA', 'DOCTORADO',
   ];
+  static const _etiquetasNivel = {
+    'SECUNDARIA': 'Secundaria',
+    'TECNICO': 'Técnico',
+    'LICENCIATURA': 'Licenciatura',
+    'MAESTRIA': 'Maestría',
+    'DOCTORADO': 'Doctorado',
+  };
   String? _nivelEducativo;
+  bool _consentimiento = false;
 
   CvAdjunto? _cv;
 
@@ -128,7 +134,7 @@ class _PostulacionPageState extends State<PostulacionPage> {
 
   String? _validarAnios(String? valor) {
     final v = valor?.trim() ?? '';
-    if (v.isEmpty) return null; // opcional
+    if (v.isEmpty) return 'Ingresa tus años de experiencia (0 si no tienes).';
     final n = int.tryParse(v);
     if (n == null) return 'Usa solo números.';
     if (n > 60) return 'Revisa los años de experiencia.';
@@ -161,12 +167,14 @@ class _PostulacionPageState extends State<PostulacionPage> {
   // -------------------------------------------------------------------- envío
 
   Future<void> _enviar() async {
+    if (_estado == _Estado.enviando) return;
     setState(() => _autovalidar = true);
 
     final formOk = _formKey.currentState?.validate() ?? false;
     // El CV no vive dentro del Form, así que se comprueba aparte.
     final cv = _cv;
-    if (!formOk || cv == null) {
+    if (!formOk || _validarAnios(_aniosExperiencia.text) != null ||
+        cv == null || _nivelEducativo == null || !_consentimiento) {
       setState(() {});
       return;
     }
@@ -271,6 +279,12 @@ class _PostulacionPageState extends State<PostulacionPage> {
         resultado: _resultado!,
         vacanteTitulo: widget.vacanteTitulo,
         onVolver: () => Navigator.of(context).maybePop(),
+        onConsultar: widget.seguimientoService == null ? null : () => Navigator.of(context).push(
+          MaterialPageRoute<void>(builder: (_) => ConsultaCodigoPage(
+            service: widget.seguimientoService!,
+            codigoInicial: _resultado!.codigoSeguimiento,
+          )),
+        ),
       ),
       _Estado.error => _EstadoError(
         mensaje: _mensajeError,
@@ -291,9 +305,12 @@ class _PostulacionPageState extends State<PostulacionPage> {
       autovalidateMode: _autovalidar
           ? AutovalidateMode.onUserInteraction
           : AutovalidateMode.disabled,
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
           _TarjetaVacante(titulo: widget.vacanteTitulo),
           const SizedBox(height: 12),
           if (_erroresBackend.isNotEmpty) ...[
@@ -346,48 +363,64 @@ class _PostulacionPageState extends State<PostulacionPage> {
                 CampoFormulario(
                   etiqueta: 'CI',
                   controller: _ci,
+                  obligatorio: true,
                   habilitado: habilitado,
                   tipoTeclado: TextInputType.text,
-                  validador: _conBackend('ci', (_) => null),
+                  validador: _conBackend('ci', (v) => _requerido(v, 'tu CI')),
                   onCambio: (_) => _limpiarErrorBackend('ci'),
                 ),
                 CampoFormulario(
                   etiqueta: 'Teléfono',
                   controller: _telefono,
+                  obligatorio: true,
                   habilitado: habilitado,
                   tipoTeclado: TextInputType.phone,
                   formateadores: [
                     FilteringTextInputFormatter.allow(RegExp(r'[0-9+\- ]')),
                   ],
-                  validador: _conBackend('telefono', (_) => null),
+                  validador: _conBackend('telefono', (v) => _requerido(v, 'tu teléfono')),
                   onCambio: (_) => _limpiarErrorBackend('telefono'),
                 ),
                 CampoFormulario(
                   etiqueta: 'Ciudad',
                   controller: _ciudad,
+                  obligatorio: true,
                   habilitado: habilitado,
-                  validador: _conBackend('ciudad', (_) => null),
+                  validador: _conBackend('ciudad', (v) => _requerido(v, 'tu ciudad')),
                   onCambio: (_) => _limpiarErrorBackend('ciudad'),
                 ),
                 CampoSeleccion(
                   etiqueta: 'Nivel educativo',
                   valor: _nivelEducativo,
                   opciones: _nivelesEducativos,
+                  etiquetas: _etiquetasNivel,
                   habilitado: habilitado,
                   onCambio: (v) => setState(() => _nivelEducativo = v),
                 ),
+                if (_autovalidar && _nivelEducativo == null)
+                  const Text('Selecciona tu nivel educativo.', style: TextStyle(color: AppColors.rojo700)),
                 CampoFormulario(
                   etiqueta: 'Años de experiencia',
                   controller: _aniosExperiencia,
+                  obligatorio: true,
                   habilitado: habilitado,
                   tipoTeclado: TextInputType.number,
                   formateadores: [
                     FilteringTextInputFormatter.digitsOnly,
                     LengthLimitingTextInputFormatter(2),
                   ],
-                  validador: _conBackend('anios_experiencia', _validarAnios),
-                  onCambio: (_) => _limpiarErrorBackend('anios_experiencia'),
+                  onCambio: (_) {
+                    _limpiarErrorBackend('anios_experiencia');
+                    if (_autovalidar) setState(() {});
+                  },
                 ),
+                if ((_autovalidar && _validarAnios(_aniosExperiencia.text) != null) ||
+                    _erroresBackend.containsKey('anios_experiencia'))
+                  Text(
+                    _erroresBackend['anios_experiencia'] ??
+                        _validarAnios(_aniosExperiencia.text)!,
+                    style: const TextStyle(color: AppColors.rojo700),
+                  ),
                 CampoFormulario(
                   etiqueta: 'LinkedIn',
                   controller: _linkedin,
@@ -407,6 +440,18 @@ class _PostulacionPageState extends State<PostulacionPage> {
                       : _erroresBackend['cv'],
                   onCambio: (cv) => setState(() => _cv = cv),
                 ),
+                Material(
+                  color: Colors.transparent,
+                  child: CheckboxListTile(
+                    value: _consentimiento,
+                    onChanged: habilitado ? (value) => setState(() => _consentimiento = value ?? false) : null,
+                    controlAffinity: ListTileControlAffinity.leading,
+                    contentPadding: EdgeInsets.zero,
+                    title: Text('Autorizo a ${widget.empresaNombre} a usar mis datos y mi CV para evaluar esta postulación.'),
+                  ),
+                ),
+                if (_autovalidar && !_consentimiento)
+                  const Text('Debes autorizar el uso de tus datos.', style: TextStyle(color: AppColors.rojo700)),
               ],
             ),
           ),
@@ -424,15 +469,10 @@ class _PostulacionPageState extends State<PostulacionPage> {
                   )
                 : const Text('Enviar postulación'),
           ),
-          const SizedBox(height: 10),
-          const Text(
-            'Al enviar aceptas que la empresa use tus datos para este '
-            'proceso de selección.',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 11.5, color: AppColors.tinta2),
-          ),
           const SizedBox(height: 24),
-        ],
+            ],
+          ),
+        ),
       ),
     );
   }

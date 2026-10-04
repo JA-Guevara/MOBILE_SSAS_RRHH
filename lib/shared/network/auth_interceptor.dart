@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:mobile_ssas_rrhh/core/constants/app_constants.dart';
 
 class AuthInterceptor extends QueuedInterceptor {
   final Dio dio;
@@ -25,7 +26,7 @@ class AuthInterceptor extends QueuedInterceptor {
         // Usamos una instancia limpia de Dio para evitar un bucle infinito
         final refreshDio = Dio(); 
         final response = await refreshDio.post(
-          'https://backendssasrrhh-production-3012.up.railway.app/auth/refresh', 
+          '${AppConstants.apiBaseUrl}/auth/refresh',
           data: {'refresh_token': refreshToken},
         );
 

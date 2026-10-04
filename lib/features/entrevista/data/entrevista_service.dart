@@ -8,9 +8,7 @@ import 'package:mobile_ssas_rrhh/features/entrevista/model/entrevista.dart';
 /// Es PÚBLICO: no requiere token; el código identifica la postulación,
 /// igual que GET /publico/postulaciones/{codigo} (T2-18).
 ///
-/// >>> VERIFICA contra /docs <<<  Estos endpoints TODAVÍA NO EXISTEN en el
-/// backend (T2-02 sin construir). Las rutas de abajo son una propuesta del
-/// equipo móvil; en cuanto rrhh-api las publique, se ajustan aquí.
+/// El código de seguimiento permite consultar y confirmar la entrevista.
 class EntrevistaService {
   /// Sin barra final, con el prefijo /api/v1.
   final String baseUrl;
@@ -18,6 +16,33 @@ class EntrevistaService {
 
   EntrevistaService({required this.baseUrl, http.Client? client})
     : _client = client ?? http.Client();
+
+  Future<Map<String, dynamic>> consultarPorCodigo(String codigo) async {
+    final response = await _client.get(_ruta(codigo))
+        .timeout(const Duration(seconds: 20));
+    if (response.statusCode != 200) {
+      throw EntrevistaException(response.statusCode,
+          response.statusCode == 404 ? 'No hay entrevista disponible para ese código.'
+              : 'No se pudo consultar la entrevista.');
+    }
+    return jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> confirmarPorCodigo(
+      String codigo, String entrevistaId) async {
+    final uri = _ruta(codigo, '/confirmar')
+        .replace(queryParameters: {'entrevista_id': entrevistaId});
+    final response = await _client.post(uri)
+        .timeout(const Duration(seconds: 20));
+    if (response.statusCode != 200) {
+      throw EntrevistaException(response.statusCode,
+          response.statusCode == 409 ? 'La entrevista ya no se puede confirmar.'
+              : 'No se pudo confirmar la entrevista.');
+    }
+    return jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+  }
+
+  void close() => _client.close();
 
   Uri _ruta(String codigo, [String extra = '']) => Uri.parse(
     '$baseUrl/publico/postulaciones/${Uri.encodeComponent(codigo)}'

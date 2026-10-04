@@ -6,7 +6,7 @@ import 'package:mobile_ssas_rrhh/features/seguimiento/ui/widgets/linea_tiempo.da
 import 'package:mobile_ssas_rrhh/shared/theme/app_theme.dart';
 
 /// Línea de tiempo de la postulación (T2-18 · HU-09 · CU-11).
-/// Se abre con el código de seguimiento que devolvió T1-20 (ej. TX-8F4K2).
+/// Se abre con el código de seguimiento que devolvió T1-20.
 ///
 /// Maneja los CUATRO estados que necesitas para la evidencia, igual que
 /// VacantesPublicasPage:
@@ -174,7 +174,16 @@ class _Contenido extends StatelessWidget {
                 ),
               ],
               const SizedBox(height: 18),
-              LineaTiempo(etapas: postulacion.etapas),
+              if (postulacion.etapas.isNotEmpty)
+                LineaTiempo(etapas: postulacion.etapas)
+              else ...[
+                _Dato(etiqueta: 'Estado', valor: postulacion.estado ?? 'Sin información'),
+                _Dato(etiqueta: 'Etapa actual', valor: postulacion.etapaActual ?? 'Sin información'),
+                if (postulacion.fechaPostulacion != null)
+                  _Dato(etiqueta: 'Postulación', valor: _fecha(postulacion.fechaPostulacion!)),
+                if (postulacion.fechaUltimoCambio != null)
+                  _Dato(etiqueta: 'Último cambio', valor: _fecha(postulacion.fechaUltimoCambio!)),
+              ],
             ],
           ),
         ),
@@ -185,6 +194,25 @@ class _Contenido extends StatelessWidget {
       ],
     );
   }
+}
+
+String _fecha(DateTime fecha) => '${fecha.day.toString().padLeft(2, '0')}/'
+    '${fecha.month.toString().padLeft(2, '0')}/${fecha.year}';
+
+class _Dato extends StatelessWidget {
+  final String etiqueta;
+  final String valor;
+
+  const _Dato({required this.etiqueta, required this.valor});
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 12),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(etiqueta, style: const TextStyle(fontSize: 12, color: AppColors.tinta2)),
+      Text(valor, style: const TextStyle(fontSize: 16, color: AppColors.tinta)),
+    ]),
+  );
 }
 
 /// Si el proceso terminó en rechazo, el candidato debe ver por qué.

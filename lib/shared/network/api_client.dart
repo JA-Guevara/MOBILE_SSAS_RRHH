@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:openapi/openapi.dart';
 import 'auth_interceptor.dart';
+import 'package:mobile_ssas_rrhh/core/constants/app_constants.dart';
 
 class ApiClient {
   late final Dio dio;
@@ -13,7 +14,7 @@ class ApiClient {
   ApiClient._internal() {
     dio = Dio(
       BaseOptions(
-        baseUrl: 'https://backendssasrrhh-production-3012.up.railway.app', 
+        baseUrl: AppConstants.apiBaseUrl,
         connectTimeout: const Duration(seconds: 10),
         receiveTimeout: const Duration(seconds: 10),
       ),

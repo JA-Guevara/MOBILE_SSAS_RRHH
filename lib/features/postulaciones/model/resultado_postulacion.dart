@@ -1,6 +1,6 @@
 /// Respuesta del backend al registrar una postulación (T1-20).
 ///
-/// Lo único imprescindible es el CÓDIGO DE SEGUIMIENTO (ej. TX-8F4K2): con él
+/// Lo único imprescindible es el CÓDIGO DE SEGUIMIENTO (ej. POST-A1B2C3D4): con él
 /// el candidato consulta su estado desde la web o la app.
 ///
 /// >>> VERIFICA estas claves contra /docs y ajústalas si difieren. <<<
