@@ -45,6 +45,7 @@ dependencies:
   http: ^1.6.0
   # T1-20: elegir el archivo del CV desde el teléfono o el disco.
   file_picker: ^12.1.2
+  speech_to_text: ^7.5.0
   # T1-20: MediaType del CV en el envío multipart del formulario.
   http_parser: ^4.1.2
 

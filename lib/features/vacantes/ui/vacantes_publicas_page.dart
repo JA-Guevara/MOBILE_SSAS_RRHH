@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_ssas_rrhh/app/chatbot_page.dart';
 
 import 'package:mobile_ssas_rrhh/shared/theme/app_theme.dart';
 import 'package:mobile_ssas_rrhh/features/postulaciones/data/postulaciones_service.dart';
@@ -108,13 +109,39 @@ class _VacantesPublicasPageState extends State<VacantesPublicasPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: widget.seguimientoService == null ? null : () => Navigator.of(context).push(
-          MaterialPageRoute<void>(builder: (_) => ConsultaCodigoPage(service: widget.seguimientoService!)),
-        ),
-        icon: const Icon(Icons.search, color: Colors.white),
-        label: const Text('Rastrear', style: TextStyle(color: Colors.white)),
-        backgroundColor: const Color(0xFF0D4A22), // Verde institucional
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton.small(
+            heroTag: 'chatbot',
+            tooltip: 'Asistente RRHH',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => ChatbotPage.publico(slug: widget.slug),
+              ),
+            ),
+            child: const Icon(Icons.chat_outlined),
+          ),
+          const SizedBox(height: 8),
+          FloatingActionButton.extended(
+            heroTag: 'seguimiento',
+            onPressed: widget.seguimientoService == null
+                ? null
+                : () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => ConsultaCodigoPage(
+                        service: widget.seguimientoService!,
+                      ),
+                    ),
+                  ),
+            icon: const Icon(Icons.search, color: Colors.white),
+            label: const Text(
+              'Rastrear',
+              style: TextStyle(color: Colors.white),
+            ),
+            backgroundColor: const Color(0xFF0D4A22),
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -173,8 +200,12 @@ class _Cabecera extends StatelessWidget {
   final VoidCallback? onCambiarEmpresa;
   final VoidCallback? onAccesoPersonal;
   final VoidCallback? onVerEntrevista;
-  const _Cabecera({required this.empresaNombre, this.onCambiarEmpresa,
-    this.onAccesoPersonal, this.onVerEntrevista});
+  const _Cabecera({
+    required this.empresaNombre,
+    this.onCambiarEmpresa,
+    this.onAccesoPersonal,
+    this.onVerEntrevista,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -190,7 +221,10 @@ class _Cabecera extends StatelessWidget {
               children: [
                 Text(
                   'SSAH · $empresaNombre',
-                  style: const TextStyle(color: Color(0xFF8FB49C), fontSize: 12),
+                  style: const TextStyle(
+                    color: Color(0xFF8FB49C),
+                    fontSize: 12,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 const Text(
@@ -220,7 +254,10 @@ class _Cabecera extends StatelessWidget {
             IconButton(
               onPressed: onVerEntrevista,
               tooltip: 'Mi entrevista',
-              icon: const Icon(Icons.event_available_outlined, color: Colors.white),
+              icon: const Icon(
+                Icons.event_available_outlined,
+                color: Colors.white,
+              ),
             ),
         ],
       ),

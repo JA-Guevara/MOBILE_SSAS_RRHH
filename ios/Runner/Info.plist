@@ -6,6 +6,10 @@
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>El microfono permite dictar una solicitud de reporte.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>El reconocimiento de voz convierte tu solicitud de reporte en texto.</string>
 	<key>CFBundleDisplayName</key>
 	<string>Mobile Ssas Rrhh</string>
 	<key>CFBundleExecutable</key>
