@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_ssas_rrhh/app/chatbot_page.dart';
 import 'package:mobile_ssas_rrhh/core/constants/app_constants.dart';
 import 'package:mobile_ssas_rrhh/features/auth/services/staff_api.dart';
+import 'package:mobile_ssas_rrhh/features/auth/screens/respaldos_empresa_page.dart';
 import 'package:mobile_ssas_rrhh/features/reportes/reportes_page.dart';
 
 class StaffPortalPage extends StatefulWidget {
@@ -64,6 +65,9 @@ class _StaffPortalPageState extends State<StaffPortalPage> {
   bool get _puedeVerReportes =>
       _permisos.contains('reportes:ver') ||
       _permisos.contains('platform:reportes:gestionar');
+
+  bool get _puedeVerRespaldos =>
+      !_esPlataforma && _permisos.contains('backup:ver');
 
   void _abrirReportes() {
     final empresaId = _empresaId.text.trim();
@@ -267,8 +271,22 @@ class _StaffPortalPageState extends State<StaffPortalPage> {
         const SizedBox(height: 16),
         if (_error != null)
           Text(_error!, style: const TextStyle(color: Colors.red)),
-        if (!_puedeVer && !_puedeVerReportes)
+        if (!_puedeVer && !_puedeVerReportes && !_puedeVerRespaldos)
           const Text('Tu cuenta no tiene permiso para ver postulaciones.'),
+        if (_puedeVerRespaldos)
+          ListTile(
+            leading: const Icon(Icons.backup_outlined),
+            title: const Text('Respaldos'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => RespaldosEmpresaPage(
+                  api: _api,
+                  canCreate: _permisos.contains('backup:crear'),
+                ),
+              ),
+            ),
+          ),
         if ((_puedeVer || _puedeVerReportes) && _esPlataforma) ...[
           TextField(
             controller: _empresaId,

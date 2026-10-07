@@ -77,6 +77,14 @@ class StaffApi {
       await _authorized('GET', '/chatbot/articulos/$id')
           as Map<String, dynamic>;
 
+  Future<Map<String, dynamic>> latestTenantBackup() async =>
+      await _authorized('GET', '/respaldos-empresa/ultimo')
+          as Map<String, dynamic>;
+
+  Future<Map<String, dynamic>> createTenantBackup() async =>
+      await _authorized('POST', '/respaldos-empresa', body: {})
+          as Map<String, dynamic>;
+
   Map<String, String>? _reportScope(String? empresaId) =>
       empresaId == null ? null : {'empresa_id': empresaId};
 
