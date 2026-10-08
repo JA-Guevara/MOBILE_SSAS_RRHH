@@ -102,6 +102,14 @@ class _ChatbotPageState extends State<ChatbotPage> {
           )
           .where((item) => item.id.isNotEmpty && item.title.isNotEmpty)
           .toList();
+      final links = (result['enlaces'] as List? ?? const [])
+          .whereType<Map>()
+          .map(
+            (item) =>
+                _ChatLink('${item['titulo'] ?? ''}', '${item['ruta'] ?? ''}'),
+          )
+          .where((item) => item.title.isNotEmpty && _isLocalRoute(item.route))
+          .toList();
       if (mounted) {
         setState(
           () => _messages.add(
@@ -109,6 +117,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
               '${result['respuesta'] ?? 'Sin respuesta.'}',
               false,
               sources,
+              links,
             ),
           ),
         );
@@ -134,6 +143,43 @@ class _ChatbotPageState extends State<ChatbotPage> {
         });
       }
     }
+  }
+
+  bool _isLocalRoute(String route) {
+    final uri = Uri.tryParse(route);
+    return uri != null &&
+        route.startsWith('/') &&
+        !route.startsWith('//') &&
+        !uri.hasScheme &&
+        !uri.hasAuthority &&
+        !uri.hasQuery &&
+        !uri.hasFragment;
+  }
+
+  bool _canOpenRoute(String route) {
+    if (widget.staffApi != null) {
+      return const {
+        '/reportes',
+        '/postulantes',
+        '/vacantes',
+        '/seleccion',
+      }.contains(route);
+    }
+    final parts = Uri.parse(route).pathSegments;
+    return parts.length >= 2 &&
+        parts[0] == 'empleos' &&
+        parts[1] == widget.slug &&
+        (parts.length == 2 || (parts.length == 4 && parts[2] == 'vacantes'));
+  }
+
+  void _openLink(_ChatLink link) {
+    if (_canOpenRoute(link.route)) {
+      Navigator.of(context).pop(link.route);
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Esta sección está disponible en la web.')),
+    );
   }
 
   Future<void> _openSource(_ChatSource source) async {
@@ -203,9 +249,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
                     child: Card(
                       child: Padding(
                         padding: EdgeInsets.all(12),
-                        child: Text(
-                          'Hola. Pregúntame sobre la información publicada por esta empresa. No compartas datos personales.',
-                        ),
+                        child: Text('Hola. ¿En qué puedo ayudarte?'),
                       ),
                     ),
                   ),
@@ -230,6 +274,20 @@ class _ChatbotPageState extends State<ChatbotPage> {
                                   TextButton(
                                     onPressed: () => _openSource(source),
                                     child: Text(source.title),
+                                  ),
+                              ],
+                              if (item.links.isNotEmpty) ...[
+                                const SizedBox(height: 8),
+                                for (final link in item.links)
+                                  TextButton.icon(
+                                    onPressed: () => _openLink(link),
+                                    icon: Icon(
+                                      _canOpenRoute(link.route)
+                                          ? Icons.open_in_new
+                                          : Icons.language,
+                                      size: 18,
+                                    ),
+                                    label: Text(link.title),
                                   ),
                               ],
                             ],
@@ -280,10 +338,22 @@ class _ChatbotPageState extends State<ChatbotPage> {
 }
 
 class _ChatMessage {
-  const _ChatMessage(this.text, this.fromUser, [this.sources = const []]);
+  const _ChatMessage(
+    this.text,
+    this.fromUser, [
+    this.sources = const [],
+    this.links = const [],
+  ]);
   final String text;
   final bool fromUser;
   final List<_ChatSource> sources;
+  final List<_ChatLink> links;
+}
+
+class _ChatLink {
+  const _ChatLink(this.title, this.route);
+  final String title;
+  final String route;
 }
 
 class _ChatSource {

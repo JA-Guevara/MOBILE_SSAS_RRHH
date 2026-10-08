@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_ssas_rrhh/app/chatbot_page.dart';
 import 'package:mobile_ssas_rrhh/core/constants/app_constants.dart';
 import 'package:mobile_ssas_rrhh/features/auth/services/staff_api.dart';
+import 'package:mobile_ssas_rrhh/features/auth/screens/postulantes_page.dart';
 import 'package:mobile_ssas_rrhh/features/auth/screens/respaldos_empresa_page.dart';
 import 'package:mobile_ssas_rrhh/features/reportes/reportes_page.dart';
 
@@ -86,6 +87,42 @@ class _StaffPortalPageState extends State<StaffPortalPage> {
         ),
       ),
     );
+  }
+
+  Future<void> _abrirChatbot() async {
+    final route = await Navigator.of(context).push<String>(
+      MaterialPageRoute<String>(
+        builder: (_) => ChatbotPage.personal(staffApi: _api),
+      ),
+    );
+    if (!mounted || route == null) return;
+    switch (route) {
+      case '/reportes':
+        if (_puedeVerReportes) {
+          _abrirReportes();
+          return;
+        }
+      case '/postulantes':
+        if (_permisos.contains('postulantes:ver')) {
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => PostulantesPage(api: _api)),
+          );
+          return;
+        }
+      case '/vacantes':
+      case '/seleccion':
+        if (_puedeVer) {
+          await _cargarVacantes();
+          return;
+        }
+    }
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Esta sección está disponible en la web.'),
+        ),
+      );
+    }
   }
 
   Future<void> _entrar() async {
@@ -182,11 +219,7 @@ class _StaffPortalPageState extends State<StaffPortalPage> {
           IconButton(
             tooltip: 'Asistente RRHH',
             icon: const Icon(Icons.chat_outlined),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => ChatbotPage.personal(staffApi: _api),
-              ),
-            ),
+            onPressed: _abrirChatbot,
           ),
         if (_perfil != null && _puedeVerReportes)
           IconButton(

@@ -77,6 +77,15 @@ class StaffApi {
       await _authorized('GET', '/chatbot/articulos/$id')
           as Map<String, dynamic>;
 
+  Future<List<Map<String, dynamic>>> applicants({
+    int offset = 0,
+    int limit = 50,
+  }) async => (await _authorized(
+    'GET',
+    '/postulantes',
+    query: {'offset': '$offset', 'limit': '$limit'},
+  ) as List).cast<Map<String, dynamic>>();
+
   Future<Map<String, dynamic>> latestTenantBackup() async =>
       await _authorized('GET', '/respaldos-empresa/ultimo')
           as Map<String, dynamic>;

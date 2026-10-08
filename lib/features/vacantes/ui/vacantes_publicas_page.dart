@@ -106,6 +106,37 @@ class _VacantesPublicasPageState extends State<VacantesPublicasPage> {
     );
   }
 
+  Future<void> _abrirChatbot() async {
+    final route = await Navigator.of(context).push<String>(
+      MaterialPageRoute<String>(
+        builder: (_) => ChatbotPage.publico(slug: widget.slug),
+      ),
+    );
+    if (!mounted || route == null) return;
+    final parts = Uri.parse(route).pathSegments;
+    if (parts.length >= 2 && parts[0] == 'empleos' && parts[1] == widget.slug) {
+      if (parts.length == 2) return;
+      if (parts.length == 4 && parts[2] == 'vacantes') {
+        try {
+          final vacante = await widget.service.obtenerDetalle(
+            widget.slug,
+            parts[3],
+          );
+          if (mounted) _abrirPostulacion(vacante);
+        } on Exception catch (error) {
+          if (mounted) {
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text('$error')));
+          }
+        }
+        return;
+      }
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Esta sección está disponible en la web.')),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -115,11 +146,7 @@ class _VacantesPublicasPageState extends State<VacantesPublicasPage> {
           FloatingActionButton.small(
             heroTag: 'chatbot',
             tooltip: 'Asistente RRHH',
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => ChatbotPage.publico(slug: widget.slug),
-              ),
-            ),
+            onPressed: _abrirChatbot,
             child: const Icon(Icons.chat_outlined),
           ),
           const SizedBox(height: 8),
