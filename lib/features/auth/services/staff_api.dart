@@ -77,6 +77,33 @@ class StaffApi {
       await _authorized('GET', '/chatbot/articulos/$id')
           as Map<String, dynamic>;
 
+  Future<Map<String, dynamic>> subscription() async =>
+      await _authorized('GET', '/suscripcion') as Map<String, dynamic>;
+
+  Future<List<Map<String, dynamic>>> subscriptionPlans() async =>
+      (await _authorized('GET', '/planes') as List)
+          .cast<Map<String, dynamic>>();
+
+  Future<Map<String, dynamic>> subscriptionConsumption() async =>
+      await _authorized('GET', '/suscripcion/consumo') as Map<String, dynamic>;
+
+  Future<String> createSubscriptionCheckout(String planId) async {
+    final result = await _authorized(
+      'POST',
+      '/suscripcion/checkout',
+      body: {'plan_id': planId},
+    ) as Map<String, dynamic>;
+    return result['url'] as String;
+  }
+
+  Future<String> createSubscriptionPortal() async {
+    final result = await _authorized(
+      'POST',
+      '/suscripcion/portal',
+    ) as Map<String, dynamic>;
+    return result['url'] as String;
+  }
+
   Future<List<Map<String, dynamic>>> applicants({
     int offset = 0,
     int limit = 50,

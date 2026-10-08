@@ -48,6 +48,7 @@ dependencies:
   speech_to_text: ^7.5.0
   # T1-20: MediaType del CV en el envío multipart del formulario.
   http_parser: ^4.1.2
+  url_launcher: ^6.3.3
 
 dev_dependencies:
   flutter_test:

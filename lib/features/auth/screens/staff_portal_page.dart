@@ -4,6 +4,7 @@ import 'package:mobile_ssas_rrhh/core/constants/app_constants.dart';
 import 'package:mobile_ssas_rrhh/features/auth/services/staff_api.dart';
 import 'package:mobile_ssas_rrhh/features/auth/screens/postulantes_page.dart';
 import 'package:mobile_ssas_rrhh/features/auth/screens/respaldos_empresa_page.dart';
+import 'package:mobile_ssas_rrhh/features/auth/screens/suscripcion_page.dart';
 import 'package:mobile_ssas_rrhh/features/reportes/reportes_page.dart';
 
 class StaffPortalPage extends StatefulWidget {
@@ -69,6 +70,9 @@ class _StaffPortalPageState extends State<StaffPortalPage> {
 
   bool get _puedeVerRespaldos =>
       !_esPlataforma && _permisos.contains('backup:ver');
+
+  bool get _puedeVerSuscripcion =>
+      !_esPlataforma && _permisos.contains('suscripcion:ver');
 
   void _abrirReportes() {
     final empresaId = _empresaId.text.trim();
@@ -304,8 +308,23 @@ class _StaffPortalPageState extends State<StaffPortalPage> {
         const SizedBox(height: 16),
         if (_error != null)
           Text(_error!, style: const TextStyle(color: Colors.red)),
-        if (!_puedeVer && !_puedeVerReportes && !_puedeVerRespaldos)
+        if (!_puedeVer &&
+            !_puedeVerReportes &&
+            !_puedeVerRespaldos &&
+            !_puedeVerSuscripcion)
           const Text('Tu cuenta no tiene permiso para ver postulaciones.'),
+        if (_puedeVerSuscripcion)
+          ListTile(
+            leading: const Icon(Icons.credit_card_outlined),
+            title: const Text('Mi suscripción'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) =>
+                    SuscripcionPage(api: _api, permissions: _permisos),
+              ),
+            ),
+          ),
         if (_puedeVerRespaldos)
           ListTile(
             leading: const Icon(Icons.backup_outlined),

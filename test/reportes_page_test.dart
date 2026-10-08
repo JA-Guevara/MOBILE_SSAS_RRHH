@@ -8,6 +8,7 @@ class _ReportApi extends StaffApi {
   _ReportApi() : super(baseUrl: 'https://example.test/api/v1');
 
   ReportConfig? received;
+  String? interpretedText;
 
   @override
   Future<List<Map<String, dynamic>>> reportCatalog() async => [
@@ -16,7 +17,29 @@ class _ReportApi extends StaffApi {
       'nombre': 'Vacantes',
       'columnas': ['titulo', 'estado'],
     },
+    {
+      'codigo': 'postulaciones',
+      'nombre': 'Postulaciones',
+      'columnas': ['postulante', 'estado'],
+    },
   ];
+
+  @override
+  Future<Map<String, dynamic>> interpretReport(
+    String text, {
+    String? empresaId,
+  }) async {
+    interpretedText = text;
+    return {
+      'config': {
+        'fuente': 'postulaciones',
+        'columnas': ['postulante'],
+        'filtros': <Object>[],
+        'orden': <Object>[],
+      },
+      'aclaracion': null,
+    };
+  }
 
   @override
   Future<List<Map<String, dynamic>>> savedReports({String? empresaId}) async =>
@@ -43,6 +66,43 @@ class _ReportApi extends StaffApi {
 }
 
 void main() {
+  testWidgets('aplica la configuración interpretada por IA', (tester) async {
+    final api = _ReportApi();
+    addTearDown(api.close);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ReportesPage(
+          api: api,
+          permissions: const {'reportes:ver', 'reportes:ejecutar'},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Describe el reporte'),
+      'Postulantes de esta empresa',
+    );
+    await tester.tap(find.text('Interpretar'));
+    await tester.pumpAndSettle();
+
+    expect(api.interpretedText, 'Postulantes de esta empresa');
+    expect(
+      find.text('Revisa la configuración antes de consultar.'),
+      findsOneWidget,
+    );
+    final pageScroll = find.byType(Scrollable).first;
+    await tester.scrollUntilVisible(
+      find.text('Vista previa'),
+      200,
+      scrollable: pageScroll,
+    );
+    await tester.tap(find.text('Vista previa'));
+    await tester.pumpAndSettle();
+    expect(api.received?.source, 'postulaciones');
+    expect(api.received?.columns, ['postulante']);
+  });
+
   testWidgets('muestra catalogo y consulta vista previa con la fuente real', (
     tester,
   ) async {
