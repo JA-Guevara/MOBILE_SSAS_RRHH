@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Sin este permiso el APK release no puede llegar al backend. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="mobile_ssas_rrhh"
         android:name="${applicationName}"

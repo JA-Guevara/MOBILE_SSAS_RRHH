@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:mobile_ssas_rrhh/shared/theme/app_theme.dart';
 import 'package:mobile_ssas_rrhh/features/entrevista/data/entrevista_service_falso.dart';
 import 'package:mobile_ssas_rrhh/features/entrevista/ui/consulta_entrevista_page.dart';
+import 'package:mobile_ssas_rrhh/features/postulaciones/data/postulaciones_service.dart';
+// Lo usan las líneas comentadas del bloque MODO del portal.
+// ignore: unused_import
 import 'package:mobile_ssas_rrhh/features/postulaciones/data/postulaciones_service_falso.dart';
 import 'package:mobile_ssas_rrhh/features/ranking/data/ranking_service_falso.dart';
 import 'package:mobile_ssas_rrhh/features/ranking/ui/ranking_page.dart';
@@ -104,24 +107,119 @@ class AppSSAH extends StatelessWidget {
 /// Toca una tarjeta de vacante para abrir el formulario de postulación.
 /// Descomenta UNA sola línea de cada grupo:
 Widget _portal() {
-  //final servicio = VacantesService(
-  //  baseUrl: 'https://backendssasrrhh-production.up.railway.app/api/v1',
-  //);
-  final servicio = VacantesServiceFalso(); // captura 1: CON DATOS
+  final servicio = VacantesService(baseUrl: _apiUrl); // BACKEND REAL
+  // final servicio = VacantesServiceFalso();   // captura 1: CON DATOS
   // final servicio = VacantesServiceVacio();   // captura 2: VACÍA
   // final servicio = VacantesServiceError();   // captura 3: CON ERROR
 
   // --- el formulario de postulación (T1-20) ---
-  final servicioPostulacion = PostulacionesServiceFalso(); // ÉXITO + código
+  final servicioPostulacion = PostulacionesService(baseUrl: _apiUrl); // REAL
+  // final servicioPostulacion = PostulacionesServiceFalso(); // ÉXITO + código
   // final servicioPostulacion = PostulacionesServiceError();      // CON ERROR
   // final servicioPostulacion = PostulacionesServiceValidacion();  // 422
 
-  return VacantesPublicasPage(
-    slug: '1234',
-    empresaNombre: 'Pollos Kiky S.R.L.',
+  return _ElegirEmpresa(
     service: servicio,
     postulacionesService: servicioPostulacion,
   );
+}
+
+const _apiUrl = 'https://backendssasrrhh-production.up.railway.app/api/v1';
+
+/// Pide el código (slug) de la empresa y abre su portal de vacantes.
+class _ElegirEmpresa extends StatefulWidget {
+  final VacantesService service;
+  final PostulacionesService postulacionesService;
+
+  const _ElegirEmpresa({
+    required this.service,
+    required this.postulacionesService,
+  });
+
+  @override
+  State<_ElegirEmpresa> createState() => _ElegirEmpresaState();
+}
+
+class _ElegirEmpresaState extends State<_ElegirEmpresa> {
+  final _slug = TextEditingController(text: 'pollos-kiky-app');
+  var _buscando = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _slug.dispose();
+    super.dispose();
+  }
+
+  Future<void> _abrir() async {
+    final slug = _slug.text.trim().toLowerCase();
+    if (slug.isEmpty) return;
+    setState(() {
+      _buscando = true;
+      _error = null;
+    });
+    try {
+      final nombre = await widget.service.nombreEmpresa(slug);
+      if (!mounted) return;
+      setState(() => _buscando = false);
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => VacantesPublicasPage(
+            slug: slug,
+            empresaNombre: nombre,
+            service: widget.service,
+            postulacionesService: widget.postulacionesService,
+          ),
+        ),
+      );
+    } on Exception catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _buscando = false;
+        _error = e.toString();
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Portal de empleos')),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          const Text(
+            'Escribe el código de la empresa para ver sus vacantes.',
+            style: TextStyle(color: AppColors.tinta2, fontSize: 14),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _slug,
+            enabled: !_buscando,
+            textInputAction: TextInputAction.go,
+            onSubmitted: (_) => _abrir(),
+            decoration: InputDecoration(
+              labelText: 'Código de la empresa',
+              hintText: 'ej. pollos-kiky-app',
+              errorText: _error,
+              border: const OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: _buscando ? null : _abrir,
+            child: _buscando
+                ? const SizedBox(
+                    height: 18,
+                    width: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Ver vacantes'),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 /// ========= MODO · línea de tiempo de la postulación (T2-18) ======

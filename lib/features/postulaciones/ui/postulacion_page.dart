@@ -70,15 +70,15 @@ class _PostulacionPageState extends State<PostulacionPage> {
   final _aniosExperiencia = TextEditingController();
   final _linkedin = TextEditingController();
 
-  /// >>> VERIFICA estos valores contra el backend antes de la demo. <<<
-  static const _nivelesEducativos = [
-    'Secundaria',
-    'Técnico',
-    'Universitario en curso',
-    'Licenciatura',
-    'Maestría',
-    'Doctorado',
-  ];
+  /// Texto que ve el usuario -> valor que acepta el backend (NivelEducativo).
+  static const _codigoNivel = {
+    'Secundaria': 'SECUNDARIA',
+    'Técnico': 'TECNICO',
+    'Licenciatura': 'LICENCIATURA',
+    'Maestría': 'MAESTRIA',
+    'Doctorado': 'DOCTORADO',
+  };
+  static final _nivelesEducativos = _codigoNivel.keys.toList();
   String? _nivelEducativo;
 
   CvAdjunto? _cv;
@@ -128,7 +128,7 @@ class _PostulacionPageState extends State<PostulacionPage> {
 
   String? _validarAnios(String? valor) {
     final v = valor?.trim() ?? '';
-    if (v.isEmpty) return null; // opcional
+    if (v.isEmpty) return 'Ingresa tus años de experiencia (0 si no tienes).';
     final n = int.tryParse(v);
     if (n == null) return 'Usa solo números.';
     if (n > 60) return 'Revisa los años de experiencia.';
@@ -166,8 +166,13 @@ class _PostulacionPageState extends State<PostulacionPage> {
     final formOk = _formKey.currentState?.validate() ?? false;
     // El CV no vive dentro del Form, así que se comprueba aparte.
     final cv = _cv;
-    if (!formOk || cv == null) {
+    if (!formOk || cv == null || _nivelEducativo == null) {
       setState(() {});
+      if (formOk && cv != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Elige tu nivel educativo.')),
+        );
+      }
       return;
     }
 
@@ -179,7 +184,7 @@ class _PostulacionPageState extends State<PostulacionPage> {
         ci: _ci.text,
         telefono: _telefono.text,
         ciudad: _ciudad.text,
-        nivelEducativo: _nivelEducativo,
+        nivelEducativo: _codigoNivel[_nivelEducativo],
         aniosExperiencia: int.tryParse(_aniosExperiencia.text.trim()),
         linkedin: _linkedin.text,
       ),
@@ -346,27 +351,36 @@ class _PostulacionPageState extends State<PostulacionPage> {
                 CampoFormulario(
                   etiqueta: 'CI',
                   controller: _ci,
+                  obligatorio: true,
                   habilitado: habilitado,
                   tipoTeclado: TextInputType.text,
-                  validador: _conBackend('ci', (_) => null),
+                  validador: _conBackend('ci', (v) => _requerido(v, 'tu CI')),
                   onCambio: (_) => _limpiarErrorBackend('ci'),
                 ),
                 CampoFormulario(
                   etiqueta: 'Teléfono',
                   controller: _telefono,
+                  obligatorio: true,
                   habilitado: habilitado,
                   tipoTeclado: TextInputType.phone,
                   formateadores: [
                     FilteringTextInputFormatter.allow(RegExp(r'[0-9+\- ]')),
                   ],
-                  validador: _conBackend('telefono', (_) => null),
+                  validador: _conBackend(
+                    'telefono',
+                    (v) => _requerido(v, 'tu teléfono'),
+                  ),
                   onCambio: (_) => _limpiarErrorBackend('telefono'),
                 ),
                 CampoFormulario(
                   etiqueta: 'Ciudad',
                   controller: _ciudad,
+                  obligatorio: true,
                   habilitado: habilitado,
-                  validador: _conBackend('ciudad', (_) => null),
+                  validador: _conBackend(
+                    'ciudad',
+                    (v) => _requerido(v, 'tu ciudad'),
+                  ),
                   onCambio: (_) => _limpiarErrorBackend('ciudad'),
                 ),
                 CampoSeleccion(
@@ -379,6 +393,7 @@ class _PostulacionPageState extends State<PostulacionPage> {
                 CampoFormulario(
                   etiqueta: 'Años de experiencia',
                   controller: _aniosExperiencia,
+                  obligatorio: true,
                   habilitado: habilitado,
                   tipoTeclado: TextInputType.number,
                   formateadores: [

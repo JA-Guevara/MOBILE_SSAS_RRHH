@@ -52,8 +52,8 @@ class Vacante {
       requisitos: _parseTextoOLista(json['requisitos']),
       beneficios: _parseTextoOLista(json['beneficios']),
       // Manejo seguro de números que vienen de un Decimal en Python
-      salarioMin: (json['salario_min'] as num?)?.toDouble(),
-      salarioMax: (json['salario_max'] as num?)?.toDouble(),
+      salarioMin: _parseNumero(json['salario_min']),
+      salarioMax: _parseNumero(json['salario_max']),
       mostrarSalario: json['mostrar_salario'] as bool? ?? false,
     );
   }
@@ -61,6 +61,13 @@ class Vacante {
   static DateTime? _parseFecha(dynamic valor) {
     if (valor == null) return null;
     return DateTime.tryParse(valor.toString());
+  }
+
+  /// FastAPI serializa los Decimal como texto ("2800.00"), no como número.
+  static double? _parseNumero(dynamic valor) {
+    if (valor == null) return null;
+    if (valor is num) return valor.toDouble();
+    return double.tryParse(valor.toString());
   }
 
   static String? _parseTextoOLista(dynamic valor) {

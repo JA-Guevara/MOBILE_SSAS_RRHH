@@ -26,16 +26,15 @@ class PostulacionesService {
     required Postulante postulante,
     required CvAdjunto cv,
   }) async {
-    // >>> VERIFICA esta ruta en /docs. <<<
-    final uri = Uri.parse(
-      '$baseUrl/publico/$slug/vacantes/$vacanteId/postulaciones',
-    );
+    // POST /publico/postulaciones: la vacante viaja como campo del
+    // formulario, no en la ruta. El slug no hace falta aquí.
+    final uri = Uri.parse('$baseUrl/publico/postulaciones');
 
     final req = http.MultipartRequest('POST', uri)
+      ..fields['vacante_id'] = vacanteId
       ..fields.addAll(postulante.toFields())
       ..files.add(
         http.MultipartFile.fromBytes(
-          // >>> VERIFICA el nombre de esta parte en /docs ('cv' o 'archivo'). <<<
           'cv',
           cv.bytes,
           filename: cv.nombre,

@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import '../model/vacante.dart';
-import '../data/vacantes_service_falso.dart'; 
-// Ajusta las rutas de los imports según dónde hayas guardado la pantalla
+import '../data/vacantes_service.dart';
 
 class VacanteDetalleScreen extends StatefulWidget {
+  final String slug;
   // 1. CORRECCIÓN: El ID ahora es String (UUID)
-  final String vacanteId; 
+  final String vacanteId;
+  final VacantesService service;
   final VoidCallback onPostular;
 
   const VacanteDetalleScreen({
-    super.key, 
+    super.key,
+    required this.slug,
     required this.vacanteId,
+    required this.service,
     required this.onPostular,
   });
   @override
@@ -24,11 +27,10 @@ class _VacanteDetalleScreenState extends State<VacanteDetalleScreen> {
 
   bool _isApplying = false;
 
-  Future<Vacante> _fetchVacanteDetalle() async {
-    // Nota: Si usas el servicio falso aún, asegúrate de que reciba un String.
-    // Si ya cambiaste al real, usa tu nuevo VacantesService aquí.
-    return await VacantesServiceFalso().obtenerDetalle(widget.vacanteId);
-  }
+  // Se pide una sola vez: si se creara en build(), cada redibujado
+  // volvería a llamar al backend.
+  late final Future<Vacante> _detalle =
+      widget.service.vacantePublica(widget.slug, widget.vacanteId);
 
   void _postular() async {
     setState(() => _isApplying = true);
@@ -66,7 +68,7 @@ class _VacanteDetalleScreenState extends State<VacanteDetalleScreen> {
         centerTitle: true,
       ),
       body: FutureBuilder<Vacante>(
-        future: _fetchVacanteDetalle(),
+        future: _detalle,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator(color: primaryDarkGreen));

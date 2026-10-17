@@ -60,7 +60,9 @@ class _VacantesPublicasPageState extends State<VacantesPublicasPage> {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => VacanteDetalleScreen(
+          slug: widget.slug,
           vacanteId: vacante.id,
+          service: widget.service,
           onPostular: () {
             // Esta es la pantalla de tu compañera (T1-20)
             final servicio = widget.postulacionesService;
