@@ -61,11 +61,14 @@ class VacantesServiceFalso extends VacantesService {
     ];
   }
 
+  @override
+  Future<String> nombreEmpresa(String slug) async => 'Pollos Kiky S.R.L.';
+
   // MÉTODO NUEVO PARA T1-19: Obtiene el detalle simulado usando el ID
   @override
   Future<Vacante> obtenerDetalle(String slug, String id) async {
     await Future.delayed(const Duration(milliseconds: 500));
-    final lista = await vacantesPublicas('falso');
+    final lista = await vacantesPublicas(slug);
     return lista.firstWhere((v) => v.id == id, orElse: () => throw Exception('Vacante no encontrada'));
   }
 }

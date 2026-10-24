@@ -7,7 +7,7 @@ class VacantesService {
   final http.Client _client;
 
   VacantesService({
-    required this.baseUrl, 
+    required this.baseUrl,
     http.Client? client
   }) : _client = client ?? http.Client();
 
@@ -36,8 +36,13 @@ class VacantesService {
   Future<List<Vacante>> vacantesPublicas(String slug) async {
     final response = await _get(_uri(slug));
     final data = jsonDecode(utf8.decode(response.bodyBytes));
-    if (data is! List) throw const FormatException('Lista de vacantes inválida');
-    return data.map((item) => Vacante.fromJson(item as Map<String, dynamic>)).toList();
+    final items = data is List
+        ? data
+        : data is Map<String, dynamic>
+            ? (data['items'] ?? data['data'])
+            : null;
+    if (items is! List) throw const FormatException('Lista de vacantes inválida');
+    return items.map((item) => Vacante.fromJson(item as Map<String, dynamic>)).toList();
   }
 
   Future<Vacante> obtenerDetalle(String slug, String id) async {
@@ -46,6 +51,8 @@ class VacantesService {
     if (data is! Map<String, dynamic>) throw const FormatException('Vacante inválida');
     return Vacante.fromJson(data);
   }
+
+  Future<Vacante> vacantePublica(String slug, String id) => obtenerDetalle(slug, id);
 
   Future<http.Response> _get(Uri uri) async {
     try {

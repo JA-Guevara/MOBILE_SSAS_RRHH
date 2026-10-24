@@ -176,6 +176,11 @@ class _PostulacionPageState extends State<PostulacionPage> {
     if (!formOk || _validarAnios(_aniosExperiencia.text) != null ||
         cv == null || _nivelEducativo == null || !_consentimiento) {
       setState(() {});
+      if (formOk && cv != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Elige tu nivel educativo.')),
+        );
+      }
       return;
     }
 

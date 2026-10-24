@@ -3,15 +3,15 @@ import '../model/vacante.dart';
 import '../data/vacantes_service.dart';
 
 class VacanteDetalleScreen extends StatefulWidget {
-  final String vacanteId;
   final String slug;
+  final String vacanteId;
   final VacantesService service;
   final VoidCallback onPostular;
 
   const VacanteDetalleScreen({
-    super.key, 
-    required this.vacanteId,
+    super.key,
     required this.slug,
+    required this.vacanteId,
     required this.service,
     required this.onPostular,
   });
