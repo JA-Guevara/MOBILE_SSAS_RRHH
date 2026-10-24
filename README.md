@@ -61,14 +61,40 @@ la compilación.
 | | *(toca una vacante)* | Con error | `PostulacionesServiceError()` |
 | | | Validación 422 | `PostulacionesServiceValidacion()` |
 
-> **Esta rama solo trae el Sprint 1.** Las pantallas de los sprints 2, 3 y 4
-> (seguimiento, ranking, asistencia, boletas, aprobaciones, cursos y chatbot)
-> llegan en sus propios PR, y cada una añadirá su fila a esta tabla.
+| **Asistencia con GPS** (T3-18) | `Pantalla.asistencia` | Sin marcar | `AsistenciaServiceSinMarcar()` |
+| | | Con entrada | `AsistenciaServiceConEntrada()` |
+| | | Día completo | `AsistenciaServiceDiaCompleto()` |
+| | | Con error | `AsistenciaServiceError()` |
+| | *(grupo permiso)* | Concedido / denegado / a ajustes / GPS apagado | `UbicacionServiceFalso()` / `UbicacionServiceDenegada()` / `UbicacionServiceDenegadaPermanente()` / `UbicacionServiceSinGps()` |
+| **Mis boletas** (T3-20) | `Pantalla.boletas` | Con boletas | `BoletasServiceFalso()` |
+| | *(toca una boleta)* | Vacía | `BoletasServiceVacio()` |
+| | | Con error | `BoletasServiceError()` |
+| **Bandeja del jefe** (T3-22) | `Pantalla.aprobaciones` | Con pendientes | `AprobacionesServiceFalso()` |
+| | *(toca una solicitud)* | Vacía | `AprobacionesServiceVacio()` |
+| | | Con error | `AprobacionesServiceError()` |
+| | | Sesión expirada | `AprobacionesServiceSinSesion()` |
+| **Mi legajo digital** (T3-27) | `Pantalla.legajo` | Con documentos y avisos | `LegajoServiceFalso()` |
+| | | Vacío | `LegajoServiceVacio()` |
+| | | Con error | `LegajoServiceError()` |
+| | | Sesión expirada | `LegajoServiceSinSesion()` |
+| **Equipo a mi cargo** (T3-29) | `Pantalla.equipo` | Con equipo | `EquipoServiceFalso()` |
+| | | Nadie a cargo | `EquipoServiceVacio()` |
+| | | Con error | `EquipoServiceError()` |
+| | | No es jefe (403) | `EquipoServiceSinPermiso()` |
+
+> Seguimiento (T2-18), entrevista (T2-19) y ranking (T2-20) tienen sus
+> estados en su bloque MODO de `lib/main.dart`.
+>
+> **Sprint 3:** el backend todavía no tiene asistencia, nómina, solicitudes,
+> contratos ni documentos, así que estas cinco pantallas van SOLO con
+> servicios falsos. Las rutas que usarán están marcadas en cada servicio
+> con `>>> VERIFICA esta ruta en /docs <<<`.
 
 ### Notas
 
-- **Portal** tiene DOS grupos de opciones dentro de su bloque MODO: la lista
-  de vacantes y el formulario de postulación. Elige una línea de cada grupo.
+- **Portal** y **Asistencia** tienen DOS grupos de opciones dentro de su
+  bloque MODO (portal: vacantes y postulación; asistencia: el día y el
+  permiso de ubicación). Elige una línea de cada grupo.
 - El estado **cargando** se ve durante el primer segundo: los servicios
   falsos simulan la demora de la red a propósito.
 - Si eliges una pantalla cuyo bloque MODO está comentado, la app no se cae:
