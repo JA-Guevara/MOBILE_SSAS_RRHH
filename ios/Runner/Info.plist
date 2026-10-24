@@ -14,6 +14,10 @@
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
+	<!-- T3-18: iOS exige explicar por qué se pide la ubicación. Este texto
+	     es el que ve el colaborador en el diálogo del sistema. -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>SSAH registra dónde marcas tu entrada y salida para validar tu asistencia.</string>
 	<key>CFBundleName</key>
 	<string>mobile_ssas_rrhh</string>
 	<key>CFBundlePackageType</key>

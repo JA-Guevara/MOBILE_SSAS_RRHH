@@ -1,6 +1,32 @@
 import 'package:flutter/material.dart';
 
 import 'package:mobile_ssas_rrhh/shared/theme/app_theme.dart';
+import 'package:mobile_ssas_rrhh/features/aprobaciones/data/aprobaciones_service_falso.dart';
+import 'package:mobile_ssas_rrhh/features/aprobaciones/ui/bandeja_page.dart';
+import 'package:mobile_ssas_rrhh/features/asistencia/data/asistencia_service_falso.dart';
+import 'package:mobile_ssas_rrhh/features/asistencia/data/ubicacion_service.dart';
+import 'package:mobile_ssas_rrhh/features/asistencia/data/ubicacion_service_falso.dart';
+import 'package:mobile_ssas_rrhh/features/asistencia/ui/asistencia_page.dart';
+import 'package:mobile_ssas_rrhh/features/boletas/data/boletas_service_falso.dart';
+import 'package:mobile_ssas_rrhh/features/boletas/ui/boletas_page.dart';
+import 'package:mobile_ssas_rrhh/features/equipo/data/equipo_service_falso.dart';
+import 'package:mobile_ssas_rrhh/features/equipo/ui/equipo_page.dart';
+import 'package:mobile_ssas_rrhh/features/legajo/data/legajo_service_falso.dart';
+import 'package:mobile_ssas_rrhh/features/legajo/ui/legajo_page.dart';
+// Los servicios REALES del Sprint 3. Los usan las líneas "BACKEND REAL"
+// comentadas de cada bloque MODO; se quedan aunque ahora no se lean.
+// ignore: unused_import
+import 'package:mobile_ssas_rrhh/features/aprobaciones/data/aprobaciones_service.dart';
+// ignore: unused_import
+import 'package:mobile_ssas_rrhh/features/asistencia/data/asistencia_service.dart';
+import 'package:mobile_ssas_rrhh/features/auth/storage/token_storage.dart';
+// ignore: unused_import
+import 'package:mobile_ssas_rrhh/features/boletas/data/boletas_service.dart';
+// ignore: unused_import
+import 'package:mobile_ssas_rrhh/features/equipo/data/equipo_service.dart';
+// ignore: unused_import
+import 'package:mobile_ssas_rrhh/features/legajo/data/legajo_service.dart';
+import 'package:mobile_ssas_rrhh/shared/api/http_client.dart';
 import 'package:mobile_ssas_rrhh/features/entrevista/data/entrevista_service_falso.dart';
 import 'package:mobile_ssas_rrhh/features/entrevista/ui/consulta_entrevista_page.dart';
 import 'package:mobile_ssas_rrhh/features/postulaciones/data/postulaciones_service.dart';
@@ -36,10 +62,10 @@ import 'package:mobile_ssas_rrhh/features/vacantes/data/vacantes_service.dart';
 ///   puedes comentar el bloque MODO que quieras sin romper nada: ninguna
 ///   otra pantalla lee sus variables.
 ///
-///   En esta rama viven el Sprint 1 (T1-18 y T1-20, ya en main) y el
-///   Sprint 2 (T2-18 y T2-20). Las pantallas de los sprints 3 y 4 llegan en
-///   sus propios PR, y cada una añade tres cosas: su valor al enum
-///   [Pantalla], su línea al mapa [pantallas] y su bloque MODO. Nada más.
+///   Aquí viven el Sprint 1 (T1-18 y T1-20), el Sprint 2 (T2-18, T2-19 y
+///   T2-20) y el Sprint 3 (T3-18, T3-20, T3-22, T3-27 y T3-29). Cada
+///   pantalla nueva añade tres cosas: su valor al enum [Pantalla], su línea
+///   al mapa [pantallas] y su bloque MODO. Nada más.
 void main() {
   // ============ MODO · con qué pantalla arranca la app =============
   // CAMBIA SOLO ESTA LÍNEA. Descomenta UNA:
@@ -49,6 +75,11 @@ void main() {
   // const pantalla = Pantalla.ranking;     // T2-20
   // const pantalla = Pantalla.entrevista;  // T2-19
   // const pantalla = Pantalla.portal;      // T1-18 y T1-20
+  // const pantalla = Pantalla.asistencia;  // T3-18
+  // const pantalla = Pantalla.boletas;     // T3-20
+  // const pantalla = Pantalla.aprobaciones; // T3-22
+  // const pantalla = Pantalla.legajo;      // T3-27
+  // const pantalla = Pantalla.equipo;      // T3-29
 
   // =================================================================
 
@@ -56,7 +87,18 @@ void main() {
 }
 
 /// Con qué pantalla arranca la app de prueba.
-enum Pantalla { menu, portal, seguimiento, ranking, entrevista }
+enum Pantalla {
+  menu,
+  portal,
+  seguimiento,
+  ranking,
+  entrevista,
+  asistencia,
+  boletas,
+  aprobaciones,
+  legajo,
+  equipo,
+}
 
 /// Qué función construye cada pantalla.
 ///
@@ -75,6 +117,11 @@ final Map<Pantalla, Widget Function()> pantallas = {
   Pantalla.seguimiento: _seguimiento,
   Pantalla.ranking: _ranking,
   Pantalla.entrevista: _entrevista,
+  Pantalla.asistencia: _asistencia,
+  Pantalla.boletas: _boletas,
+  Pantalla.aprobaciones: _aprobaciones,
+  Pantalla.legajo: _legajo,
+  Pantalla.equipo: _equipo,
 };
 
 class AppSSAH extends StatelessWidget {
@@ -269,6 +316,90 @@ Widget _entrevista() {
   );
 }
 
+/// ========= MODO · marcar asistencia con GPS (T3-18) ===============
+/// El backend todavía no tiene asistencia (T3-05). Cuando la tenga,
+/// descomenta la línea BACKEND REAL y comenta las demás del grupo "el día".
+/// Esta pantalla tiene DOS grupos: el día y el permiso de ubicación.
+/// Descomenta UNA sola línea de cada grupo:
+Widget _asistencia() {
+  // --- el día ---
+  // final servicio = AsistenciaService(backendReal(), sesionReal()); // BACKEND REAL
+  final servicio = AsistenciaServiceSinMarcar(); // —:— a —:—
+  // final servicio = AsistenciaServiceConEntrada();  // 08:03 a —:—
+  // final servicio = AsistenciaServiceDiaCompleto(); // BOTÓN CERRADO
+  // final servicio = AsistenciaServiceError();       // CON ERROR
+
+  // --- el permiso ---
+  // El tipo se escribe a mano (y no `final`) para que la última opción, la
+  // del GPS de verdad, siga siendo válida al descomentarla.
+  const UbicacionService ubicacion = UbicacionServiceFalso(); // CONCEDIDO
+  // const ubicacion = UbicacionServiceDenegada();            // DENEGADO
+  // const ubicacion = UbicacionServiceDenegadaPermanente();  // A AJUSTES
+  // const ubicacion = UbicacionServiceSinGps();              // GPS APAGADO
+  // const ubicacion = UbicacionService();  // el GPS de verdad, en el teléfono
+
+  return AsistenciaPage(service: servicio, ubicacion: ubicacion);
+}
+
+/// ============= MODO · mis boletas de pago (T3-20) ================
+/// El backend todavía no tiene nómina (T3-09): solo servicios falsos.
+/// Toca una boleta para abrir su detalle. Descomenta UNA sola línea:
+Widget _boletas() {
+  // final servicio = BoletasService(backendReal(), sesionReal()); // BACKEND REAL
+  final servicio = BoletasServiceFalso(); // CON BOLETAS
+  // final servicio = BoletasServiceVacio();  // SIN BOLETAS
+  // final servicio = BoletasServiceError();  // CON ERROR
+
+  return BoletasPage(service: servicio);
+}
+
+/// ============ MODO · bandeja del jefe (T3-22) ====================
+/// El backend todavía no tiene solicitudes (T3-06): solo servicios falsos.
+/// Toca una solicitud para abrir el detalle y responderla.
+/// Descomenta UNA sola línea:
+Widget _aprobaciones() {
+  // final servicio = AprobacionesService(backendReal(), sesionReal()); // BACKEND REAL
+  final servicio = AprobacionesServiceFalso(); // CON PENDIENTES
+  // final servicio = AprobacionesServiceVacio();     // VACÍA
+  // final servicio = AprobacionesServiceError();     // CON ERROR
+  // final servicio = AprobacionesServiceSinSesion(); // 401
+
+  return BandejaPage(service: servicio);
+}
+
+/// ============== MODO · mi legajo digital (T3-27) =================
+/// El backend todavía no tiene documento_empleado (T3-02): solo servicios
+/// falsos. Descomenta UNA sola línea:
+Widget _legajo() {
+  // final servicio = LegajoService(backendReal(), sesionReal()); // BACKEND REAL
+  final servicio = LegajoServiceFalso(); // CON DOCUMENTOS (y avisos)
+  // final servicio = LegajoServiceVacio();      // SIN DOCUMENTOS
+  // final servicio = LegajoServiceError();      // CON ERROR
+  // final servicio = LegajoServiceSinSesion();  // SESIÓN EXPIRADA
+
+  return LegajoPage(service: servicio);
+}
+
+/// ============== MODO · equipo a mi cargo (T3-29) =================
+/// El backend todavía no tiene contrato ni asistencia (T3-01, T3-05):
+/// solo servicios falsos. Descomenta UNA sola línea:
+Widget _equipo() {
+  // final servicio = EquipoService(backendReal(), sesionReal()); // BACKEND REAL
+  final servicio = EquipoServiceFalso(); // CON EQUIPO
+  // final servicio = EquipoServiceVacio();       // NADIE A CARGO
+  // final servicio = EquipoServiceError();       // CON ERROR
+  // final servicio = EquipoServiceSinPermiso();  // NO ES JEFE (403)
+
+  return EquipoPage(service: servicio);
+}
+
+/// El cliente del backend de verdad para las líneas "BACKEND REAL" del
+/// Sprint 3: la misma URL que el portal.
+AppHttpClient backendReal() => AppHttpClient(baseUrl: _apiUrl);
+
+/// El token que guardó el login en el almacenamiento seguro.
+TokenStorage sesionReal() => const SecureTokenStorage();
+
 /// ============== MODO · menú con todas las pantallas ===============
 /// Abre cualquier pantalla con un toque y vuelve aquí con "atrás".
 /// El estado de cada una (con datos, vacía, error...) se sigue eligiendo
@@ -281,6 +412,11 @@ const _titulosMenu = {
   Pantalla.seguimiento: ('Seguimiento de postulación', 'T2-18'),
   Pantalla.ranking: ('Ranking del reclutador', 'T2-20'),
   Pantalla.entrevista: ('Confirmar entrevista', 'T2-19'),
+  Pantalla.asistencia: ('Marcar asistencia con GPS', 'T3-18'),
+  Pantalla.boletas: ('Mis boletas de pago', 'T3-20'),
+  Pantalla.aprobaciones: ('Bandeja del jefe: aprobar o rechazar', 'T3-22'),
+  Pantalla.legajo: ('Mi legajo digital', 'T3-27'),
+  Pantalla.equipo: ('Equipo a mi cargo', 'T3-29'),
 };
 
 class _MenuPantallas extends StatelessWidget {
