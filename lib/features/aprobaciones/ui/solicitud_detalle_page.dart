@@ -297,7 +297,7 @@ class _Datos extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  solicitud.cargoSolicitante ?? solicitud.solicitante,
+                  solicitud.solicitante,
                   style: const TextStyle(fontSize: 13, color: AppColors.tinta2),
                 ),
               ),

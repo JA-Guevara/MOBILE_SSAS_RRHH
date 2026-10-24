@@ -13,6 +13,20 @@ import 'package:mobile_ssas_rrhh/features/equipo/data/equipo_service_falso.dart'
 import 'package:mobile_ssas_rrhh/features/equipo/ui/equipo_page.dart';
 import 'package:mobile_ssas_rrhh/features/legajo/data/legajo_service_falso.dart';
 import 'package:mobile_ssas_rrhh/features/legajo/ui/legajo_page.dart';
+// Los servicios REALES del Sprint 3. Los usan las líneas "BACKEND REAL"
+// comentadas de cada bloque MODO; se quedan aunque ahora no se lean.
+// ignore: unused_import
+import 'package:mobile_ssas_rrhh/features/aprobaciones/data/aprobaciones_service.dart';
+// ignore: unused_import
+import 'package:mobile_ssas_rrhh/features/asistencia/data/asistencia_service.dart';
+import 'package:mobile_ssas_rrhh/features/auth/storage/token_storage.dart';
+// ignore: unused_import
+import 'package:mobile_ssas_rrhh/features/boletas/data/boletas_service.dart';
+// ignore: unused_import
+import 'package:mobile_ssas_rrhh/features/equipo/data/equipo_service.dart';
+// ignore: unused_import
+import 'package:mobile_ssas_rrhh/features/legajo/data/legajo_service.dart';
+import 'package:mobile_ssas_rrhh/shared/api/http_client.dart';
 import 'package:mobile_ssas_rrhh/features/entrevista/data/entrevista_service_falso.dart';
 import 'package:mobile_ssas_rrhh/features/entrevista/ui/consulta_entrevista_page.dart';
 import 'package:mobile_ssas_rrhh/features/postulaciones/data/postulaciones_service.dart';
@@ -303,11 +317,13 @@ Widget _entrevista() {
 }
 
 /// ========= MODO · marcar asistencia con GPS (T3-18) ===============
-/// El backend todavía no tiene asistencia (T3-05): solo servicios falsos.
+/// El backend todavía no tiene asistencia (T3-05). Cuando la tenga,
+/// descomenta la línea BACKEND REAL y comenta las demás del grupo "el día".
 /// Esta pantalla tiene DOS grupos: el día y el permiso de ubicación.
 /// Descomenta UNA sola línea de cada grupo:
 Widget _asistencia() {
   // --- el día ---
+  // final servicio = AsistenciaService(backendReal(), sesionReal()); // BACKEND REAL
   final servicio = AsistenciaServiceSinMarcar(); // —:— a —:—
   // final servicio = AsistenciaServiceConEntrada();  // 08:03 a —:—
   // final servicio = AsistenciaServiceDiaCompleto(); // BOTÓN CERRADO
@@ -329,6 +345,7 @@ Widget _asistencia() {
 /// El backend todavía no tiene nómina (T3-09): solo servicios falsos.
 /// Toca una boleta para abrir su detalle. Descomenta UNA sola línea:
 Widget _boletas() {
+  // final servicio = BoletasService(backendReal(), sesionReal()); // BACKEND REAL
   final servicio = BoletasServiceFalso(); // CON BOLETAS
   // final servicio = BoletasServiceVacio();  // SIN BOLETAS
   // final servicio = BoletasServiceError();  // CON ERROR
@@ -341,6 +358,7 @@ Widget _boletas() {
 /// Toca una solicitud para abrir el detalle y responderla.
 /// Descomenta UNA sola línea:
 Widget _aprobaciones() {
+  // final servicio = AprobacionesService(backendReal(), sesionReal()); // BACKEND REAL
   final servicio = AprobacionesServiceFalso(); // CON PENDIENTES
   // final servicio = AprobacionesServiceVacio();     // VACÍA
   // final servicio = AprobacionesServiceError();     // CON ERROR
@@ -353,6 +371,7 @@ Widget _aprobaciones() {
 /// El backend todavía no tiene documento_empleado (T3-02): solo servicios
 /// falsos. Descomenta UNA sola línea:
 Widget _legajo() {
+  // final servicio = LegajoService(backendReal(), sesionReal()); // BACKEND REAL
   final servicio = LegajoServiceFalso(); // CON DOCUMENTOS (y avisos)
   // final servicio = LegajoServiceVacio();      // SIN DOCUMENTOS
   // final servicio = LegajoServiceError();      // CON ERROR
@@ -365,6 +384,7 @@ Widget _legajo() {
 /// El backend todavía no tiene contrato ni asistencia (T3-01, T3-05):
 /// solo servicios falsos. Descomenta UNA sola línea:
 Widget _equipo() {
+  // final servicio = EquipoService(backendReal(), sesionReal()); // BACKEND REAL
   final servicio = EquipoServiceFalso(); // CON EQUIPO
   // final servicio = EquipoServiceVacio();       // NADIE A CARGO
   // final servicio = EquipoServiceError();       // CON ERROR
@@ -372,6 +392,13 @@ Widget _equipo() {
 
   return EquipoPage(service: servicio);
 }
+
+/// El cliente del backend de verdad para las líneas "BACKEND REAL" del
+/// Sprint 3: la misma URL que el portal.
+AppHttpClient backendReal() => AppHttpClient(baseUrl: _apiUrl);
+
+/// El token que guardó el login en el almacenamiento seguro.
+TokenStorage sesionReal() => const SecureTokenStorage();
 
 /// ============== MODO · menú con todas las pantallas ===============
 /// Abre cualquier pantalla con un toque y vuelve aquí con "atrás".

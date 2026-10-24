@@ -61,12 +61,8 @@ class Asistencia {
   });
 
   /// >>> VERIFICA estas claves contra /docs y ajústalas si difieren. <<<
-  factory Asistencia.fromJson(Map<String, dynamic> json) {
-    // El backend puede devolver el objeto directo o envuelto, igual que en
-    // las otras features.
-    final cuerpo =
-        (json['data'] ?? json['asistencia'] ?? json) as Map<String, dynamic>;
-
+  /// Lee SOLO las columnas de la tabla "asistencia" del diagrama.
+  factory Asistencia.fromJson(Map<String, dynamic> cuerpo) {
     return Asistencia(
       id: leerId(cuerpo['id']) ?? '',
       empleadoId: leerId(cuerpo['empleado_id']),

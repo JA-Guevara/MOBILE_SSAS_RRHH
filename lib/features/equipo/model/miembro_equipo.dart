@@ -1,87 +1,50 @@
 import 'package:mobile_ssas_rrhh/features/asistencia/model/asistencia.dart';
-import 'package:mobile_ssas_rrhh/shared/format/json_id.dart';
+import 'package:mobile_ssas_rrhh/features/equipo/model/contrato.dart';
+import 'package:mobile_ssas_rrhh/shared/referencias/referencias.dart';
 
 /// Una persona que le reporta al jefe autenticado, con su cargo y su
 /// asistencia de hoy (T3-29 · HU-12 · CU-20).
 ///
-/// ESTE ARCHIVO ES EL ÚNICO LUGAR donde vive el contrato del API para la
-/// fila del equipo. Cruza tres tablas:
-///   empleado   -> id, codigo, nombres, apellido_paterno, apellido_materno
-///   contrato   -> cargo_id (resuelto a [cargo]) y jefe_directo_id, que es
-///                 el filtro: el backend devuelve solo los contratos
-///                 VIGENTES cuyo jefe_directo_id es el empleado del token
-///   asistencia -> fecha, hora_entrada, hora_salida, estado (a través de
-///                 [asistencia], que reutiliza el modelo de T3-18)
+/// NO se lee de un JSON: la arma EquipoService uniendo tablas por llaves.
+///   contrato   -> la fila (VIGENTE, jefe_directo_id = el jefe)
+///   empleado   -> por contrato.empleado_id   (GET /empleados, ya existe)
+///   cargo      -> por contrato.cargo_id      (GET /cargos, ya existe)
+///   asistencia -> por asistencia.empleado_id = contrato.empleado_id
 class MiembroEquipo {
-  /// Id del empleado, no del contrato: es lo que identifica a la persona.
-  final String id;
+  final Contrato contrato;
 
-  final String? codigo;
-  final String nombres;
-  final String apellidoPaterno;
-  final String? apellidoMaterno;
+  /// Null si el empleado no vino en GET /empleados.
+  final EmpleadoRef? empleado;
 
-  /// Nombre del cargo vigente, ya resuelto desde contrato.cargo_id.
-  final String? cargo;
+  /// Null si el cargo no vino en GET /cargos.
+  final CargoRef? cargo;
 
-  /// La marca de hoy. Null si todavía no marcó nada.
+  /// La fila de asistencia de hoy. Null si todavía no marcó nada.
   final Asistencia? asistencia;
 
   const MiembroEquipo({
-    required this.id,
-    required this.nombres,
-    required this.apellidoPaterno,
-    this.codigo,
-    this.apellidoMaterno,
+    required this.contrato,
+    this.empleado,
     this.cargo,
     this.asistencia,
   });
 
-  /// >>> VERIFICA estas claves contra /docs y ajústalas si difieren. <<<
-  /// El endpoint todavía no existe (T3-01 y T3-05 sin construir).
-  factory MiembroEquipo.fromJson(Map<String, dynamic> json) {
-    // Los datos del empleado pueden venir planos o anidados en
-    // "empleado": {...}, igual que el postulante en el ranking de T2-20.
-    final sub = json['empleado'];
-    final empleado = sub is Map<String, dynamic> ? sub : json;
-
-    final asistenciaJson = json['asistencia'];
-
-    return MiembroEquipo(
-      id: leerId(empleado['id'] ?? json['empleado_id']) ?? '',
-      codigo: empleado['codigo'] as String?,
-      nombres: (empleado['nombres'] ?? '') as String,
-      apellidoPaterno: (empleado['apellido_paterno'] ?? '') as String,
-      apellidoMaterno: empleado['apellido_materno'] as String?,
-      cargo: _cargo(json['cargo']),
-      asistencia: asistenciaJson is Map<String, dynamic>
-          ? Asistencia.fromJson(asistenciaJson)
-          : null,
-    );
-  }
-
-  /// El cargo puede llegar resuelto como {"id", "nombre"} o como texto.
-  static String? _cargo(Object? valor) {
-    if (valor is Map<String, dynamic>) return valor['nombre'] as String?;
-    if (valor is String && valor.trim().isNotEmpty) return valor.trim();
-    return null;
-  }
-
   // ------------------------------------------------------------- para mostrar
 
-  /// "Lucía Fernández Rojas". No deja espacios sueltos si falta algo.
-  String get nombreCompleto => [
-    nombres,
-    apellidoPaterno,
-    apellidoMaterno ?? '',
-  ].where((s) => s.isNotEmpty).join(' ');
+  /// "Lucía Fernández Rojas". Si el nombre no se pudo resolver, se muestra
+  /// el número de contrato para que el jefe tenga al menos una referencia.
+  String get nombreCompleto =>
+      empleado?.nombreCompleto ??
+      'Contrato ${contrato.numeroContrato ?? contrato.id}';
 
-  /// "LF" para el avatar.
+  /// "LF" para el avatar; "?" si no hay nombre.
   String get iniciales {
-    final a = nombres.isNotEmpty ? nombres[0] : '';
-    final b = apellidoPaterno.isNotEmpty ? apellidoPaterno[0] : '';
-    return (a + b).toUpperCase();
+    final i = empleado?.iniciales ?? '';
+    return i.isEmpty ? '?' : i;
   }
+
+  /// Nombre del cargo del contrato vigente.
+  String? get cargoNombre => cargo?.nombre;
 
   /// Cómo está hoy. Ver [EstadoDia].
   EstadoDia get estadoDia {

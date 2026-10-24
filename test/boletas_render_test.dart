@@ -89,7 +89,7 @@ void main() {
     await tester.pumpWidget(
       _app(
         BoletaDetallePage(
-          boletaId: '31',
+          boletaId: 'b31',
           etiquetaPeriodo: 'Agosto 2026',
           service: BoletasServiceFalso(),
         ),
@@ -154,7 +154,7 @@ void main() {
     await tester.pumpWidget(
       _app(
         BoletaDetallePage(
-          boletaId: '31',
+          boletaId: 'b31',
           etiquetaPeriodo: 'Agosto 2026',
           service: BoletasServiceError(),
         ),

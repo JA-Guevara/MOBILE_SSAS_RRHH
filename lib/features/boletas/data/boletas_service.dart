@@ -1,6 +1,9 @@
 import 'package:mobile_ssas_rrhh/core/errors/app_exception.dart';
 import 'package:mobile_ssas_rrhh/features/auth/storage/token_storage.dart';
+import 'package:mobile_ssas_rrhh/features/boletas/model/boleta_detalle.dart';
 import 'package:mobile_ssas_rrhh/features/boletas/model/boleta_pago.dart';
+import 'package:mobile_ssas_rrhh/features/boletas/model/periodo_nomina.dart';
+import 'package:mobile_ssas_rrhh/shared/api/filas.dart';
 import 'package:mobile_ssas_rrhh/shared/api/http_client.dart';
 
 /// Boletas de pago del colaborador (T3-20 · HU-14 · CU-27).
@@ -21,18 +24,19 @@ class BoletasService {
   Future<List<BoletaPago>> mias() async {
     final token = await _tokenStorage.readAccessToken();
 
-    // >>> VERIFICA esta ruta en /docs. <<<  El endpoint todavía no existe.
-    final respuesta = await _client.get('/boletas', accessToken: token);
+    // >>> VERIFICA estas rutas en /docs. <<<  Los endpoints todavía no
+    // existen. Se piden las dos tablas por separado y se unen aquí por
+    // boleta_pago.periodo_id = periodo_nomina.id.
+    final r = await Future.wait([
+      _client.get('/boletas', accessToken: token),
+      _periodos(token),
+    ]);
+    final boletas = r[0];
+    final periodos = r[1] as Map<String, PeriodoNomina>;
 
-    final items = respuesta is Map<String, dynamic>
-        ? (respuesta['items'] ?? respuesta['data'])
-        : respuesta;
-
-    if (items is! List) return const [];
-
-    final lista = items
-        .whereType<Map<String, dynamic>>()
+    final lista = filasDe(boletas)
         .map(BoletaPago.fromJson)
+        .map((b) => b.conRelaciones(periodo: periodos[b.periodoId]))
         .toList();
 
     // El backend debería devolverlas ordenadas, pero se reordena aquí para
@@ -49,17 +53,36 @@ class BoletasService {
   Future<BoletaPago> detalle(String boletaId) async {
     final token = await _tokenStorage.readAccessToken();
 
-    // >>> VERIFICA esta ruta en /docs. <<<
-    final respuesta = await _client.get(
-      '/boletas/$boletaId',
-      accessToken: token,
-    );
+    // >>> VERIFICA estas rutas en /docs. <<<  La fila de boleta_pago y
+    // sus filas de boleta_detalle (boleta_detalle.boleta_id = boleta.id).
+    final r = await Future.wait([
+      _client.get('/boletas/$boletaId', accessToken: token),
+      _client.get('/boletas/$boletaId/detalles', accessToken: token),
+      _periodos(token),
+    ]);
+    final respuesta = r[0];
+    final lineas = r[1];
+    final periodos = r[2] as Map<String, PeriodoNomina>;
 
     if (respuesta is! Map<String, dynamic>) {
       throw const AppException('El servidor no devolvió la boleta.');
     }
 
-    return BoletaPago.fromJson(respuesta);
+    final boleta = BoletaPago.fromJson(respuesta);
+    return boleta.conRelaciones(
+      periodo: periodos[boleta.periodoId],
+      detalles: filasDe(lineas).map(BoletaDetalle.fromJson).toList(),
+    );
+  }
+
+  /// Los periodos de nómina de la empresa, por id, para unirlos a las
+  /// boletas.
+  Future<Map<String, PeriodoNomina>> _periodos(String? token) async {
+    // >>> VERIFICA esta ruta en /docs. <<<
+    final respuesta = await _client.get('/periodos-nomina', accessToken: token);
+    return {
+      for (final p in filasDe(respuesta).map(PeriodoNomina.fromJson)) p.id: p,
+    };
   }
 
   /// Ordena por periodo: primero gestión, luego mes. Las boletas sin periodo

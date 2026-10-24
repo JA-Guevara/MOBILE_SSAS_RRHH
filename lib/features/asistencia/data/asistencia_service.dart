@@ -27,17 +27,20 @@ class AsistenciaService {
   Future<Asistencia?> deHoy() async {
     final token = await _tokenStorage.readAccessToken();
 
-    // >>> VERIFICA esta ruta en /docs. <<<  El endpoint todavía no existe.
-    final respuesta = await _client.get('/asistencias/hoy', accessToken: token);
+    final Object? respuesta;
+    try {
+      // >>> VERIFICA esta ruta en /docs. <<<  El endpoint todavía no existe.
+      respuesta = await _client.get('/asistencias/hoy', accessToken: token);
+    } on AppException catch (e) {
+      // 404: todavía no hay fila de asistencia para hoy.
+      if (e.statusCode == 404) return null;
+      rethrow;
+    }
 
-    if (respuesta == null) return null;
-    if (respuesta is! Map<String, dynamic>) return null;
+    // Un cuerpo vacío (null o {}) también significa "sin marcar".
+    if (respuesta is! Map<String, dynamic> || respuesta.isEmpty) return null;
 
-    // Un cuerpo vacío o {"asistencia": null} también significa "sin marcar".
-    final cuerpo = respuesta['data'] ?? respuesta['asistencia'] ?? respuesta;
-    if (cuerpo is! Map<String, dynamic> || cuerpo.isEmpty) return null;
-
-    return Asistencia.fromJson(cuerpo);
+    return Asistencia.fromJson(respuesta);
   }
 
   /// Registra la hora de entrada con las coordenadas donde se marcó.

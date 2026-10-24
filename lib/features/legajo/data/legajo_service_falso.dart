@@ -1,12 +1,13 @@
-import 'package:mobile_ssas_rrhh/core/errors/app_exception.dart';
-import 'package:mobile_ssas_rrhh/features/auth/storage/token_storage.dart';
 import 'package:mobile_ssas_rrhh/features/legajo/data/legajo_service.dart';
-import 'package:mobile_ssas_rrhh/features/legajo/model/documento_empleado.dart';
-import 'package:mobile_ssas_rrhh/shared/api/http_client.dart';
+import 'package:mobile_ssas_rrhh/shared/api/backend_falso.dart';
 
-/// Servicios FALSOS para desarrollar sin backend, igual que en las otras
-/// features. En T3-27 son OBLIGATORIOS por ahora: el backend no tiene
-/// documento_empleado (T3-01 y T3-02 sin construir).
+/// Servicios FALSOS para desarrollar sin backend. En T3-27 son
+/// OBLIGATORIOS por ahora: el backend no tiene documento_empleado (T3-01 y
+/// T3-02 sin construir).
+///
+/// No reemplazan ningún método: le pasan a LegajoService un backend falso
+/// que responde con filas de "documento_empleado". Corre el mismo código
+/// que contra rrhh-api.
 ///
 /// Para las capturas de evidencia:
 ///   con documentos -> LegajoServiceFalso
@@ -16,17 +17,21 @@ import 'package:mobile_ssas_rrhh/shared/api/http_client.dart';
 ///
 /// No borres este archivo: también sirve para pruebas automatizadas.
 
-/// Las dependencias reales no se usan en los fakes, pero el constructor de
-/// LegajoService las pide. Se les pasa una instancia inerte.
-AppHttpClient _clienteInerte() => AppHttpClient(baseUrl: 'falso');
-
 /// Seis documentos que cubren los cuatro casos de vigencia, adrede
 /// DESORDENADOS para comprobar que la pantalla los ordena por urgencia.
 ///
 /// Las fechas se calculan desde hoy: así la captura siempre muestra un
 /// documento vencido y dos por vencer, sin importar el día en que se tome.
 class LegajoServiceFalso extends LegajoService {
-  LegajoServiceFalso() : super(_clienteInerte(), MemoryTokenStorage());
+  LegajoServiceFalso()
+    : super(
+        clienteFalso(
+          (p) => p.es('GET', '/documentos-empleado/mios')
+              ? datos(DateTime.now())
+              : throw ErrorFalso.rutaDesconocida(p),
+        ),
+        sesionFalsa(),
+      );
 
   /// Mismas claves que lee DocumentoEmpleado.fromJson, para que al cambiar
   /// al backend real no falle nada.
@@ -93,50 +98,46 @@ class LegajoServiceFalso extends LegajoService {
       'fecha_carga': '2026-09-24T10:30:00',
     },
   ];
-
-  @override
-  Future<List<DocumentoEmpleado>> mios() async {
-    // Simula la demora de la red, para ver el estado "cargando".
-    await Future.delayed(const Duration(milliseconds: 800));
-    return datos(DateTime.now()).map(DocumentoEmpleado.fromJson).toList();
-  }
 }
 
 /// El colaborador todavía no tiene documentos cargados.
 class LegajoServiceVacio extends LegajoService {
-  LegajoServiceVacio() : super(_clienteInerte(), MemoryTokenStorage());
-
-  @override
-  Future<List<DocumentoEmpleado>> mios() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    return const [];
-  }
+  LegajoServiceVacio()
+    : super(
+        clienteFalso(
+          (_) => const <Object>[],
+          demora: const Duration(milliseconds: 500),
+        ),
+        sesionFalsa(),
+      );
 }
 
 /// Lanza un error de red: para la captura del estado "con error".
 class LegajoServiceError extends LegajoService {
-  LegajoServiceError() : super(_clienteInerte(), MemoryTokenStorage());
-
-  @override
-  Future<List<DocumentoEmpleado>> mios() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    throw const AppException(
-      'No se pudieron cargar tus documentos. '
-      'Revisa tu conexión e inténtalo de nuevo.',
-      statusCode: 503,
-    );
-  }
+  LegajoServiceError()
+    : super(
+        clienteFalso(
+          (_) => throw const ErrorFalso(
+            503,
+            'No se pudieron cargar tus documentos. '
+            'Revisa tu conexión e inténtalo de nuevo.',
+          ),
+          demora: const Duration(milliseconds: 500),
+        ),
+        sesionFalsa(),
+      );
 }
 
 /// La sesión caducó: 401.
 class LegajoServiceSinSesion extends LegajoService {
-  LegajoServiceSinSesion() : super(_clienteInerte(), MemoryTokenStorage());
-
-  @override
-  Future<List<DocumentoEmpleado>> mios() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    throw const AppException('No autenticado.', statusCode: 401);
-  }
+  LegajoServiceSinSesion()
+    : super(
+        clienteFalso(
+          (_) => throw const ErrorFalso(401, 'No autenticado.'),
+          demora: const Duration(milliseconds: 500),
+        ),
+        sesionFalsa(),
+      );
 }
 
 /// "2026-11-05": la fecha a [dias] de [hoy], como la manda una columna DATE.

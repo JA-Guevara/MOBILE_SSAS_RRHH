@@ -81,13 +81,13 @@ void main() {
   });
 
   group('contrato del API', () {
-    test('acepta UUID, "archivo" en vez de "archivo_url" y tipos nuevos', () {
+    test('lee las columnas de documento_empleado y acepta tipos nuevos', () {
       final doc = DocumentoEmpleado.fromJson({
         'id': '3f2a9c1e-0b7d-4d2a-9a51-0c6f4f1b8e21',
         'empleado_id': 'a1b2c3d4-0000-4000-8000-000000000007',
         'tipo': 'LICENCIA_CONDUCIR',
         'nombre': 'Licencia de conducir',
-        'archivo': 'https://archivos.test/licencia.pdf',
+        'archivo_url': 'https://archivos.test/licencia.pdf',
         'fecha_emision': '2024-03-05',
         'fecha_vencimiento': '2029-03-05',
       });

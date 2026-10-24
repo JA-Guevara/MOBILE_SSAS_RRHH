@@ -34,13 +34,13 @@ class BoletaPago {
   final DateTime? fechaGeneracion;
   final DateTime? fechaPago;
 
-  /// >>> VERIFICA contra /docs <<<  La tabla guarda periodo_id; aquí se
-  /// espera el periodo ya resuelto, porque la lista se agrupa por él y el
-  /// colaborador no ve identificadores.
+  /// La fila de periodo_nomina cuyo id es [periodoId]. NO viene en el JSON
+  /// de la boleta: la resuelve BoletasService con [conRelaciones].
   final PeriodoNomina? periodo;
 
-  /// Las líneas de la boleta, ya ordenadas por secuencia. Vienen vacías en
-  /// la lista y llenas en el detalle: el listado no necesita cargarlas.
+  /// Las filas de boleta_detalle cuyo boleta_id es [id], ordenadas por
+  /// secuencia. Vacías en la lista y llenas en el detalle: las une
+  /// BoletasService con [conRelaciones].
   final List<BoletaDetalle> detalles;
 
   const BoletaPago({
@@ -66,26 +66,9 @@ class BoletaPago {
     this.detalles = const [],
   });
 
-  /// >>> VERIFICA estas claves contra /docs y ajústalas si difieren. <<<
-  factory BoletaPago.fromJson(Map<String, dynamic> json) {
-    // El backend puede devolver el objeto directo o envuelto, igual que en
-    // las otras features.
-    final cuerpo =
-        (json['data'] ?? json['boleta'] ?? json) as Map<String, dynamic>;
-
-    final periodoJson = cuerpo['periodo'];
-    final listaDetalles = (cuerpo['detalles'] ?? const []) as List;
-
-    final detalles =
-        listaDetalles
-            .whereType<Map<String, dynamic>>()
-            .map(BoletaDetalle.fromJson)
-            .toList()
-          // El orden lo manda "secuencia": es como la empresa quiere que se
-          // lea su boleta. Se ordena aquí para que la pantalla no dependa
-          // de que el backend lo respete.
-          ..sort((a, b) => a.secuencia.compareTo(b.secuencia));
-
+  /// Lee SOLO las columnas de la tabla "boleta_pago" del diagrama. El
+  /// periodo y las líneas se unen después con [conRelaciones].
+  factory BoletaPago.fromJson(Map<String, dynamic> cuerpo) {
     return BoletaPago(
       id: leerId(cuerpo['id']) ?? '',
       empresaId: leerId(cuerpo['empresa_id']),
@@ -106,12 +89,41 @@ class BoletaPago {
       estado: cuerpo['estado'] as String?,
       fechaGeneracion: _parseFecha(cuerpo['fecha_generacion']),
       fechaPago: _parseFecha(cuerpo['fecha_pago']),
-      periodo: periodoJson is Map<String, dynamic>
-          ? PeriodoNomina.fromJson(periodoJson)
-          : null,
-      detalles: detalles,
     );
   }
+
+  /// La misma boleta con su periodo y sus líneas ya unidos.
+  ///
+  /// Las líneas se ordenan por "secuencia": es como la empresa quiere que
+  /// se lea su boleta. Se ordena aquí para que la pantalla no dependa de
+  /// que el backend lo respete.
+  BoletaPago conRelaciones({
+    PeriodoNomina? periodo,
+    List<BoletaDetalle>? detalles,
+  }) => BoletaPago(
+    id: id,
+    empresaId: empresaId,
+    periodoId: periodoId,
+    empleadoId: empleadoId,
+    contratoId: contratoId,
+    estructuraId: estructuraId,
+    numero: numero,
+    diasTrabajados: diasTrabajados,
+    diasNoTrabajados: diasNoTrabajados,
+    horasExtra: horasExtra,
+    salarioBasico: salarioBasico,
+    totalGanado: totalGanado,
+    totalDescuentos: totalDescuentos,
+    liquidoPagable: liquidoPagable,
+    totalAportesPatronales: totalAportesPatronales,
+    estado: estado,
+    fechaGeneracion: fechaGeneracion,
+    fechaPago: fechaPago,
+    periodo: periodo ?? this.periodo,
+    detalles: detalles == null
+        ? this.detalles
+        : ([...detalles]..sort((a, b) => a.secuencia.compareTo(b.secuencia))),
+  );
 
   static DateTime? _parseFecha(dynamic valor) {
     if (valor == null) return null;

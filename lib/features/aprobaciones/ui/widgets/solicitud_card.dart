@@ -49,16 +49,6 @@ class SolicitudCard extends StatelessWidget {
                             color: AppColors.tinta,
                           ),
                         ),
-                        if (solicitud.cargoSolicitante != null) ...[
-                          const SizedBox(height: 3),
-                          Text(
-                            solicitud.cargoSolicitante!,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.tinta2,
-                            ),
-                          ),
-                        ],
                       ],
                     ),
                   ),

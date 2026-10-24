@@ -86,9 +86,48 @@ la compilación.
 > estados en su bloque MODO de `lib/main.dart`.
 >
 > **Sprint 3:** el backend todavía no tiene asistencia, nómina, solicitudes,
-> contratos ni documentos, así que estas cinco pantallas van SOLO con
-> servicios falsos. Las rutas que usarán están marcadas en cada servicio
-> con `>>> VERIFICA esta ruta en /docs <<<`.
+> contratos ni documentos, así que estas cinco pantallas arrancan con
+> servicios falsos. Cuando el backend esté listo, en cada bloque MODO se
+> descomenta la línea `BACKEND REAL` y listo: no hay que tocar nada más.
+
+### Sprint 3: qué espera la app del backend
+
+Los servicios falsos **no reemplazan código**: le pasan al servicio real un
+backend de mentira (`lib/shared/api/backend_falso.dart`) que responde por
+HTTP con filas de las tablas del diagrama del Sprint 3. Las pantallas
+corren el mismo código que correrá contra rrhh-api.
+
+Cada modelo lee **solo las columnas de su tabla** y la app une las tablas
+por sus llaves (`periodo_id`, `boleta_id`, `tipo_ausencia_id`,
+`empleado_id`, `cargo_id`). Por eso el backend solo tiene que devolver las
+filas tal cual, sin objetos anidados.
+
+| Ruta (prefijo `/api/v1`) | Devuelve | Pantalla |
+|---|---|---|
+| `GET /asistencias/hoy` | una fila de `asistencia` (404 si no marcó) | T3-18 |
+| `POST /asistencias/entrada` · body `latitud_entrada`, `longitud_entrada`, `origen` | la fila de `asistencia` | T3-18 |
+| `POST /asistencias/salida` · body `latitud_salida`, `longitud_salida` | la fila de `asistencia` | T3-18 |
+| `GET /boletas` | filas de `boleta_pago` del colaborador | T3-20 |
+| `GET /boletas/{id}` | una fila de `boleta_pago` | T3-20 |
+| `GET /boletas/{id}/detalles` | filas de `boleta_detalle` | T3-20 |
+| `GET /periodos-nomina` | filas de `periodo_nomina` | T3-20 |
+| `GET /solicitudes-ausencia/pendientes` | filas de `solicitud_ausencia` del jefe | T3-22 |
+| `GET /solicitudes-ausencia/{id}` | una fila de `solicitud_ausencia` | T3-22 |
+| `POST /solicitudes-ausencia/{id}/aprobar` y `/rechazar` · body `observacion_aprobador` | la fila actualizada | T3-22 |
+| `GET /tipos-ausencia` | filas de `tipo_ausencia` | T3-22 |
+| `GET /saldos-vacacion[?empleado_id=]` | filas de `saldo_vacacion` | T3-22 |
+| `GET /documentos-empleado/mios` | filas de `documento_empleado` del colaborador | T3-27 |
+| `GET /contratos/mi-equipo` | filas de `contrato` cuyo `jefe_directo_id` es el usuario | T3-29 |
+| `GET /asistencias?fecha=AAAA-MM-DD` | filas de `asistencia` del equipo ese día | T3-29 |
+| `GET /empleados`, `GET /cargos` | **ya existen**: solo para mostrar nombres | T3-22, T3-29 |
+
+Ninguna ruta manda `empleado_id` ni `aprobador_id`: el backend los saca del
+token. Si alguna ruta queda distinta, se cambia una línea en el servicio
+(están marcadas con `>>> VERIFICA esta ruta en /docs <<<`).
+
+Para que los servicios reales funcionen, además, el login tiene que guardar
+el token de verdad en el almacenamiento seguro con la clave `access_token`
+(hoy guarda uno falso) y enviar `empresa_slug`.
 
 ### Notas
 

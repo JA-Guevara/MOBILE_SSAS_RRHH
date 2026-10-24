@@ -12,7 +12,9 @@ import 'package:mobile_ssas_rrhh/features/aprobaciones/ui/widgets/tarjeta_saldo.
 import 'package:mobile_ssas_rrhh/features/asistencia/data/asistencia_service.dart';
 import 'package:mobile_ssas_rrhh/features/auth/storage/token_storage.dart';
 import 'package:mobile_ssas_rrhh/features/boletas/data/boletas_service.dart';
+import 'package:mobile_ssas_rrhh/features/boletas/model/boleta_detalle.dart';
 import 'package:mobile_ssas_rrhh/features/boletas/model/boleta_pago.dart';
+import 'package:mobile_ssas_rrhh/features/boletas/model/periodo_nomina.dart';
 import 'package:mobile_ssas_rrhh/shared/api/http_client.dart';
 import 'package:mobile_ssas_rrhh/shared/format/moneda.dart';
 import 'package:mobile_ssas_rrhh/shared/theme/app_theme.dart';
@@ -59,10 +61,17 @@ Future<TokenStorage> _sesion() async {
   return storage;
 }
 
-/// Una boleta con el JSON del diagrama (boleta_pago + boleta_detalle).
-/// AFP laboral: 12,71 % del total ganado. El aporte patronal va en su
-/// propia línea y NO es un descuento del trabajador.
-Map<String, dynamic> _boleta({
+/// Una boleta como la devolvería el backend: tres respuestas separadas,
+/// una por tabla del diagrama (boleta_pago, boleta_detalle y
+/// periodo_nomina). AFP laboral sobre el total ganado; el aporte patronal
+/// va en su propia línea y NO es un descuento del trabajador.
+typedef _Boleta = ({
+  Map<String, dynamic> fila,
+  List<Map<String, dynamic>> detalles,
+  Map<String, dynamic> periodo,
+});
+
+_Boleta _boleta({
   required String id,
   required double basico,
   required double porcentajeAfp,
@@ -70,19 +79,22 @@ Map<String, dynamic> _boleta({
 }) {
   final afp = double.parse((basico * porcentajeAfp / 100).toStringAsFixed(2));
   final patronal = double.parse((basico * 0.1671).toStringAsFixed(2));
-  return {
-    'id': id,
-    'numero': 'BP-$id',
-    'salario_basico': basico,
-    'total_ganado': basico,
-    'total_descuentos': afp,
-    'liquido_pagable': double.parse((basico - afp).toStringAsFixed(2)),
-    'total_aportes_patronales': patronal,
-    'estado': 'APROBADA',
-    'periodo': {'id': 'p-$mes', 'nombre': '$mes 2026', 'gestion': 2026},
-    'detalles': [
+  return (
+    fila: {
+      'id': id,
+      'periodo_id': 'p-$mes',
+      'numero': 'BP-$id',
+      'salario_basico': basico,
+      'total_ganado': basico,
+      'total_descuentos': afp,
+      'liquido_pagable': double.parse((basico - afp).toStringAsFixed(2)),
+      'total_aportes_patronales': patronal,
+      'estado': 'APROBADA',
+    },
+    detalles: [
       {
         'id': '$id-1',
+        'boleta_id': id,
         'codigo': 'BASICO',
         'nombre': 'Haber básico',
         'tipo': 'HABER',
@@ -91,6 +103,7 @@ Map<String, dynamic> _boleta({
       },
       {
         'id': '$id-2',
+        'boleta_id': id,
         'codigo': 'AFP',
         'nombre': 'AFP laboral',
         'tipo': 'DESCUENTO',
@@ -101,6 +114,7 @@ Map<String, dynamic> _boleta({
       },
       {
         'id': '$id-3',
+        'boleta_id': id,
         'codigo': 'AP_PAT',
         'nombre': 'Aporte patronal',
         'tipo': 'APORTE_PATRONAL',
@@ -110,8 +124,30 @@ Map<String, dynamic> _boleta({
         'monto': patronal,
       },
     ],
-  };
+    periodo: {'id': 'p-$mes', 'nombre': '$mes 2026', 'gestion': 2026},
+  );
 }
+
+/// Lo que haría BoletasService al unir las tres tablas, sin pasar por HTTP.
+BoletaPago _unida(_Boleta b) => BoletaPago.fromJson(b.fila).conRelaciones(
+  periodo: PeriodoNomina.fromJson(b.periodo),
+  detalles: b.detalles.map(BoletaDetalle.fromJson).toList(),
+);
+
+/// Un backend simulado que responde cada tabla en su ruta.
+AppHttpClient _backendBoleta(_Boleta b) => AppHttpClient(
+  baseUrl: 'https://api.test/api/v1',
+  client: MockClient((req) async {
+    final id = b.fila['id'];
+    final cuerpo = switch (req.url.path) {
+      '/api/v1/periodos-nomina' => [b.periodo],
+      final r when r == '/api/v1/boletas/$id' => b.fila,
+      final r when r == '/api/v1/boletas/$id/detalles' => b.detalles,
+      _ => throw StateError('ruta inesperada ${req.url}'),
+    };
+    return http.Response.bytes(utf8.encode(jsonEncode(cuerpo)), 200);
+  }),
+);
 
 double _suma(Iterable<double?> montos) =>
     montos.fold(0.0, (total, m) => total + (m ?? 0));
@@ -130,7 +166,7 @@ void main() {
     for (final MapEntry(key: sueldo, value: esperado) in hoja.entries) {
       test('sueldo de Bs $sueldo: coincide con la hoja', () async {
         final servicio = BoletasService(
-          _cliente(
+          _backendBoleta(
             _boleta(
               id: '7c0e2a4b-$sueldo',
               basico: double.parse(sueldo),
@@ -142,6 +178,7 @@ void main() {
         );
 
         final boleta = await servicio.detalle('7c0e2a4b-$sueldo');
+        expect(boleta.etiquetaPeriodo, 'Septiembre 2026');
 
         // Lo que ve el colaborador es lo de la hoja manual.
         expect(Moneda.bs(boleta.totalGanado), esperado.$1);
@@ -165,7 +202,7 @@ void main() {
     }
 
     test('el aporte patronal no se resta del líquido del trabajador', () {
-      final boleta = BoletaPago.fromJson(
+      final boleta = _unida(
         _boleta(id: 'b1', basico: 3500, porcentajeAfp: 12.71, mes: 'Julio'),
       );
       expect(boleta.descuentos.map((d) => d.codigo), ['AFP']);
@@ -176,10 +213,10 @@ void main() {
   group('Caso 2 · cambio de parámetro a mitad de gestión', () {
     test('cada boleta enseña el porcentaje de su propio periodo', () {
       // Julio con 12,71 %; en agosto la empresa cambió el parámetro.
-      final julio = BoletaPago.fromJson(
+      final julio = _unida(
         _boleta(id: 'j', basico: 4500, porcentajeAfp: 12.71, mes: 'Julio'),
       );
-      final agosto = BoletaPago.fromJson(
+      final agosto = _unida(
         _boleta(id: 'a', basico: 4500, porcentajeAfp: 13.21, mes: 'Agosto'),
       );
 

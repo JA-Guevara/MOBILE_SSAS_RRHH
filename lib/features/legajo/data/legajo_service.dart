@@ -1,6 +1,7 @@
 import 'package:mobile_ssas_rrhh/core/errors/app_exception.dart';
 import 'package:mobile_ssas_rrhh/features/auth/storage/token_storage.dart';
 import 'package:mobile_ssas_rrhh/features/legajo/model/documento_empleado.dart';
+import 'package:mobile_ssas_rrhh/shared/api/filas.dart';
 import 'package:mobile_ssas_rrhh/shared/api/http_client.dart';
 
 /// Mi legajo digital (T3-27 · HU-12 · CU-20): los documentos personales del
@@ -24,22 +25,11 @@ class LegajoService {
     // T3-02 solo cubre el legajo que ve RR. HH. desde la web. Es la
     // propuesta del equipo móvil para el autoservicio del colaborador.
     final respuesta = await _client.get(
-      '/empleados/me/documentos',
+      '/documentos-empleado/mios',
       accessToken: token,
     );
 
-    // Lista directa o envuelta en {"items": [...]} / {"data": [...]}, igual
-    // que en las otras features.
-    final items = respuesta is Map<String, dynamic>
-        ? (respuesta['items'] ?? respuesta['data'])
-        : respuesta;
-
-    if (items is! List) return const [];
-
-    return items
-        .whereType<Map<String, dynamic>>()
-        .map(DocumentoEmpleado.fromJson)
-        .toList();
+    return filasDe(respuesta).map(DocumentoEmpleado.fromJson).toList();
   }
 }
 

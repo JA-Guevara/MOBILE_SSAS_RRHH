@@ -1,7 +1,11 @@
 import 'package:mobile_ssas_rrhh/core/errors/app_exception.dart';
+import 'package:mobile_ssas_rrhh/features/asistencia/model/asistencia.dart';
 import 'package:mobile_ssas_rrhh/features/auth/storage/token_storage.dart';
+import 'package:mobile_ssas_rrhh/features/equipo/model/contrato.dart';
 import 'package:mobile_ssas_rrhh/features/equipo/model/miembro_equipo.dart';
+import 'package:mobile_ssas_rrhh/shared/api/filas.dart';
 import 'package:mobile_ssas_rrhh/shared/api/http_client.dart';
+import 'package:mobile_ssas_rrhh/shared/referencias/referencias.dart';
 
 /// Equipo a mi cargo (T3-29 · HU-12 · CU-20): las personas que le reportan
 /// al jefe autenticado, con su cargo y su asistencia de hoy.
@@ -12,31 +16,51 @@ class EquipoService {
   final AppHttpClient _client;
   final TokenStorage _tokenStorage;
 
-  EquipoService(this._client, this._tokenStorage);
+  /// De dónde sale "hoy" para pedir la asistencia del día. Las pruebas lo
+  /// fijan; en la app es el reloj del teléfono.
+  final DateTime Function() hoy;
 
-  /// No recibe el id del jefe: el backend lo saca del token y filtra los
-  /// contratos vigentes por jefe_directo_id. Mandarlo desde el cliente
-  /// dejaría ver el equipo de otro jefe.
+  EquipoService(this._client, this._tokenStorage, {this.hoy = DateTime.now});
+
+  /// Pide cada tabla por separado y las une por sus llaves:
+  ///   contrato.empleado_id  -> empleado (nombre)
+  ///   contrato.cargo_id     -> cargo (nombre)
+  ///   asistencia.empleado_id = contrato.empleado_id  (la fila de hoy)
+  ///
+  /// No se manda el id del jefe: el backend lo saca del token y filtra los
+  /// contratos por jefe_directo_id. Mandarlo desde el cliente dejaría ver
+  /// el equipo de otro jefe.
   Future<List<MiembroEquipo>> miEquipo() async {
     final token = await _tokenStorage.readAccessToken();
 
-    // >>> VERIFICA esta ruta en /docs. <<<  El endpoint todavía no existe:
-    // no hay contrato ni asistencia en rrhh-api. Es la propuesta del equipo
-    // móvil; en cuanto el backend la publique, se ajusta aquí.
-    final respuesta = await _client.get(
-      '/empleados/me/equipo',
-      accessToken: token,
-    );
+    final r = await Future.wait([
+      // >>> VERIFICA estas dos rutas en /docs. <<<  Todavía no existen.
+      _client.get('/contratos/mi-equipo', accessToken: token),
+      _client.get('/asistencias?fecha=${_fecha(hoy())}', accessToken: token),
+      // Estas dos YA EXISTEN en rrhh-api (limit máximo 100).
+      _client.get('/empleados?limit=100', accessToken: token),
+      _client.get('/cargos', accessToken: token),
+    ]);
 
-    final items = respuesta is Map<String, dynamic>
-        ? (respuesta['items'] ?? respuesta['data'])
-        : respuesta;
+    final asistencias = <String, Asistencia>{
+      for (final a in filasDe(r[1]).map(Asistencia.fromJson))
+        if (a.empleadoId != null) a.empleadoId!: a,
+    };
+    final empleados = porId(filasDe(r[2]), EmpleadoRef.fromJson, (e) => e.id);
+    final cargos = porId(filasDe(r[3]), CargoRef.fromJson, (c) => c.id);
 
-    if (items is! List) return const [];
-
-    final lista = items
-        .whereType<Map<String, dynamic>>()
-        .map(MiembroEquipo.fromJson)
+    final lista = filasDe(r[0])
+        .map(Contrato.fromJson)
+        // Contratos versionados: solo cuenta el vigente.
+        .where((c) => c.esVigente)
+        .map(
+          (c) => MiembroEquipo(
+            contrato: c,
+            empleado: empleados[c.empleadoId],
+            cargo: cargos[c.cargoId],
+            asistencia: asistencias[c.empleadoId],
+          ),
+        )
         .toList();
 
     // Orden alfabético: el jefe busca a una persona por su nombre, y así la
@@ -44,6 +68,11 @@ class EquipoService {
     lista.sort((a, b) => a.nombreCompleto.compareTo(b.nombreCompleto));
     return lista;
   }
+
+  /// "2026-10-24", como una columna DATE.
+  static String _fecha(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-'
+      '${d.day.toString().padLeft(2, '0')}';
 }
 
 /// Traduce el fallo a algo que el jefe entienda, igual que en T2-20. Aquí

@@ -1,20 +1,19 @@
-import 'package:mobile_ssas_rrhh/core/errors/app_exception.dart';
-import 'package:mobile_ssas_rrhh/features/auth/storage/token_storage.dart';
 import 'package:mobile_ssas_rrhh/features/boletas/data/boletas_service.dart';
-import 'package:mobile_ssas_rrhh/features/boletas/model/boleta_pago.dart';
-import 'package:mobile_ssas_rrhh/shared/api/http_client.dart';
+import 'package:mobile_ssas_rrhh/shared/api/backend_falso.dart';
 
-/// Servicios FALSOS para desarrollar sin backend, igual que en las otras
-/// features. Aquí sirven además para trabajar sin estar autenticado.
+/// Servicios FALSOS para desarrollar sin backend.
 ///
-/// Para las 3 capturas de evidencia:
-///   con boletas  -> BoletasServiceFalso
-///   sin boletas  -> BoletasServiceVacio
-///   con error    -> BoletasServiceError
-
-/// Las dependencias reales no se usan en los fakes, pero el constructor de
-/// BoletasService las pide. Se les pasa una instancia inerte.
-AppHttpClient _clienteInerte() => AppHttpClient(baseUrl: 'falso');
+/// No reemplazan ningún método: le pasan a BoletasService un backend falso
+/// que responde con filas de las tablas del diagrama del Sprint 3
+/// (boleta_pago, periodo_nomina y boleta_detalle), cada una por su lado.
+/// La unión por periodo_id y boleta_id la hace el servicio real.
+///
+/// Para las capturas de evidencia:
+///   con boletas -> BoletasServiceFalso
+///   vacío       -> BoletasServiceVacio
+///   con error   -> BoletasServiceError
+///
+/// No borres este archivo: también sirve para pruebas automatizadas.
 
 /// Tres boletas, adrede DESORDENADAS, y una con líneas completas.
 ///
@@ -22,42 +21,33 @@ AppHttpClient _clienteInerte() => AppHttpClient(baseUrl: 'falso');
 /// descuentos suman total_descuentos, y la resta da liquido_pagable. Si no
 /// cuadraran, la captura mostraría una boleta que no se sostiene.
 class BoletasServiceFalso extends BoletasService {
-  BoletasServiceFalso() : super(_clienteInerte(), MemoryTokenStorage());
+  BoletasServiceFalso() : super(clienteFalso(_responder), sesionFalsa());
 
-  @override
-  Future<List<BoletaPago>> mias() async {
-    // Simula la demora de la red, para ver el estado "cargando".
-    await Future.delayed(const Duration(milliseconds: 800));
+  static Object? _responder(PeticionFalsa p) {
+    if (p.es('GET', '/boletas')) return [_julio, _agosto, _junio];
+    if (p.es('GET', '/periodos-nomina')) return _periodos;
 
-    final lista =
-        [_julio(), _agosto(), _junio()].map(BoletaPago.fromJson).toList()
-          ..sort(BoletasService.masRecientePrimero);
+    for (final boleta in [_agosto, _julio, _junio]) {
+      final id = boleta['id'];
+      if (p.es('GET', '/boletas/$id')) return boleta;
+      if (p.es('GET', '/boletas/$id/detalles')) return _lineas(id as String);
+    }
 
-    return lista;
+    if (p.metodo == 'GET' && p.ruta.startsWith('/boletas/')) {
+      throw const ErrorFalso(404, 'La boleta no existe.');
+    }
+    throw ErrorFalso.rutaDesconocida(p);
   }
 
-  @override
-  Future<BoletaPago> detalle(String boletaId) async {
-    await Future.delayed(const Duration(milliseconds: 700));
+  // ------------------------------------------------- boleta_pago (3 filas)
 
-    final crudo = switch (boletaId) {
-      '31' => _agosto(),
-      '30' => _julio(),
-      _ => _junio(),
-    };
-
-    return BoletaPago.fromJson({...crudo, 'detalles': _lineas(boletaId)});
-  }
-
-  // ------------------------------------------------------------- las boletas
-
-  static Map<String, dynamic> _agosto() => {
-    'id': 31,
-    'empresa_id': 1,
-    'periodo_id': 8,
-    'empleado_id': 7,
-    'contrato_id': 12,
-    'estructura_id': 2,
+  static const _agosto = {
+    'id': 'b31',
+    'empresa_id': 'emp1',
+    'periodo_id': 'p8',
+    'empleado_id': 'e7',
+    'contrato_id': 'c12',
+    'estructura_id': 'es2',
     'numero': 'BOL-2026-08-0031',
     'dias_trabajados': 30,
     'dias_no_trabajados': 0,
@@ -67,185 +57,239 @@ class BoletasServiceFalso extends BoletasService {
     'total_descuentos': 936.99,
     'liquido_pagable': 6425.51,
     'total_aportes_patronales': 1236.90,
-    'estado': 'pagada',
+    'estado': 'PAGADA',
     'fecha_generacion': '2026-08-28',
     'fecha_pago': '2026-08-30',
-    'periodo': {
-      'id': 8,
+  };
+
+  static const _julio = {
+    'id': 'b30',
+    'empresa_id': 'emp1',
+    'periodo_id': 'p7',
+    'empleado_id': 'e7',
+    'contrato_id': 'c12',
+    'estructura_id': 'es2',
+    'numero': 'BOL-2026-07-0030',
+    'dias_trabajados': 28,
+    'dias_no_trabajados': 2,
+    'horas_extra': 0,
+    'salario_basico': 6500,
+    'total_ganado': 6933.33,
+    'total_descuentos': 882.42,
+    'liquido_pagable': 6050.91,
+    'total_aportes_patronales': 1158.56,
+    'estado': 'PAGADA',
+    'fecha_generacion': '2026-07-28',
+    'fecha_pago': '2026-07-30',
+  };
+
+  static const _junio = {
+    'id': 'b29',
+    'empresa_id': 'emp1',
+    'periodo_id': 'p6',
+    'empleado_id': 'e7',
+    'contrato_id': 'c12',
+    'estructura_id': 'es2',
+    'numero': 'BOL-2026-06-0029',
+    'dias_trabajados': 30,
+    'dias_no_trabajados': 0,
+    'horas_extra': 0,
+    'salario_basico': 6500,
+    'total_ganado': 6500,
+    'total_descuentos': 827.45,
+    'liquido_pagable': 5672.55,
+    'total_aportes_patronales': 1086.15,
+    'estado': 'GENERADA',
+    'fecha_generacion': '2026-06-28',
+    'fecha_pago': null,
+  };
+
+  // ---------------------------------------------- periodo_nomina (3 filas)
+
+  static const _periodos = [
+    {
+      'id': 'p8',
+      'empresa_id': 'emp1',
       'nombre': 'Agosto 2026',
       'mes': 8,
       'gestion': 2026,
       'fecha_inicio': '2026-08-01',
       'fecha_fin': '2026-08-31',
-      'estado': 'cerrado',
+      'estado': 'PAGADO',
+      'fecha_cierre': '2026-08-30',
     },
-  };
-
-  static Map<String, dynamic> _julio() => {
-    'id': 30,
-    'empresa_id': 1,
-    'periodo_id': 7,
-    'empleado_id': 7,
-    'numero': 'BOL-2026-07-0030',
-    'dias_trabajados': 28,
-    'dias_no_trabajados': 2,
-    'salario_basico': 6500,
-    'total_ganado': 6933.33,
-    'total_descuentos': 882.42,
-    'liquido_pagable': 6050.91,
-    'estado': 'pagada',
-    'fecha_generacion': '2026-07-28',
-    'fecha_pago': '2026-07-30',
-    'periodo': {
-      'id': 7,
+    {
+      'id': 'p7',
+      'empresa_id': 'emp1',
       'nombre': 'Julio 2026',
       'mes': 7,
       'gestion': 2026,
-      'estado': 'cerrado',
+      'fecha_inicio': '2026-07-01',
+      'fecha_fin': '2026-07-31',
+      'estado': 'CERRADO',
+      'fecha_cierre': '2026-07-30',
     },
-  };
-
-  static Map<String, dynamic> _junio() => {
-    'id': 29,
-    'empresa_id': 1,
-    'periodo_id': 6,
-    'empleado_id': 7,
-    'numero': 'BOL-2026-06-0029',
-    'dias_trabajados': 30,
-    'dias_no_trabajados': 0,
-    'salario_basico': 6500,
-    'total_ganado': 6500,
-    'total_descuentos': 827.45,
-    'liquido_pagable': 5672.55,
-    'estado': 'generada',
-    'fecha_generacion': '2026-06-28',
-    'periodo': {
-      'id': 6,
+    {
+      'id': 'p6',
+      'empresa_id': 'emp1',
       // Sin "nombre": se comprueba que la etiqueta se arma con mes y gestión.
+      'nombre': null,
       'mes': 6,
       'gestion': 2026,
-      'estado': 'cerrado',
-    },
-  };
-
-  // -------------------------------------------------------------- las líneas
-
-  /// Líneas de la boleta de agosto. Las otras reutilizan la forma.
-  ///
-  /// La secuencia va adrede desordenada para comprobar que la pantalla la
-  /// respeta, y hay una línea de tipo "aporte_patronal" que no es haber ni
-  /// descuento: sirve para ver que no se pierde.
-  static List<Map<String, dynamic>> _lineas(String boletaId) => [
-    {
-      'id': 5,
-      'boleta_id': boletaId,
-      'codigo': 'AFP',
-      'nombre': 'Aporte AFP (laboral)',
-      'tipo': 'descuento',
-      'secuencia': 20,
-      'base': 7362.50,
-      'porcentaje': 12.71,
-      'monto': 935.77,
-    },
-    {
-      'id': 1,
-      'boleta_id': boletaId,
-      'codigo': 'BAS',
-      'nombre': 'Salario básico',
-      'tipo': 'haber',
-      'secuencia': 1,
-      'cantidad': 30,
-      'monto': 6500,
-    },
-    {
-      'id': 3,
-      'boleta_id': boletaId,
-      'codigo': 'HEX',
-      'nombre': 'Horas extra',
-      'tipo': 'haber',
-      'secuencia': 3,
-      'cantidad': 4.5,
-      'base': 27.08,
-      'monto': 121.86,
-    },
-    {
-      'id': 2,
-      'boleta_id': boletaId,
-      'codigo': 'ANT',
-      'nombre': 'Bono de antigüedad',
-      'tipo': 'haber',
-      'secuencia': 2,
-      'base': 2500,
-      'porcentaje': 11,
-      'monto': 275,
-    },
-    {
-      'id': 6,
-      'boleta_id': boletaId,
-      'codigo': 'ANT-S',
-      'nombre': 'Anticipo de sueldo',
-      'tipo': 'descuento',
-      'secuencia': 21,
-      'monto': 1.22,
-    },
-    {
-      'id': 4,
-      'boleta_id': boletaId,
-      'codigo': 'DOM',
-      'nombre': 'Domingos y feriados',
-      'tipo': 'haber',
-      'secuencia': 4,
-      'cantidad': 2,
-      'monto': 465.64,
-    },
-    {
-      // >>> VERIFICA <<<  Este tipo no es haber ni descuento: cae en "otro"
-      // y la pantalla lo muestra en su propio bloque en vez de perderlo.
-      'id': 7,
-      'boleta_id': boletaId,
-      'codigo': 'CNS',
-      'nombre': 'Aporte patronal CNS',
-      'tipo': 'aporte_patronal',
-      'secuencia': 30,
-      'base': 7362.50,
-      'porcentaje': 10,
-      'monto': 736.25,
+      'fecha_inicio': '2026-06-01',
+      'fecha_fin': '2026-06-30',
+      'estado': 'CERRADO',
+      'fecha_cierre': '2026-06-30',
     },
   ];
+
+  // ---------------------------------------------- boleta_detalle (7 filas)
+
+  /// Líneas de la boleta. La secuencia va adrede desordenada para comprobar
+  /// que la pantalla la respeta, y hay una línea APORTE_PATRONAL que no es
+  /// haber ni descuento: sirve para ver que no se pierde.
+  static List<Map<String, dynamic>> _lineas(String boletaId) => [
+    _linea(
+      boletaId,
+      'd5',
+      'r5',
+      'AFP',
+      'Aporte AFP (laboral)',
+      'DESCUENTO',
+      20,
+      base: 7362.50,
+      porcentaje: 12.71,
+      monto: 935.77,
+    ),
+    _linea(
+      boletaId,
+      'd1',
+      'r1',
+      'BAS',
+      'Salario básico',
+      'HABER',
+      1,
+      cantidad: 30,
+      monto: 6500,
+    ),
+    _linea(
+      boletaId,
+      'd3',
+      'r3',
+      'HEX',
+      'Horas extra',
+      'HABER',
+      3,
+      cantidad: 4.5,
+      base: 27.08,
+      monto: 121.86,
+    ),
+    _linea(
+      boletaId,
+      'd2',
+      'r2',
+      'ANT',
+      'Bono de antigüedad',
+      'HABER',
+      2,
+      base: 2500,
+      porcentaje: 11,
+      monto: 275,
+    ),
+    _linea(
+      boletaId,
+      'd6',
+      'r6',
+      'ANT-S',
+      'Anticipo de sueldo',
+      'DESCUENTO',
+      21,
+      monto: 1.22,
+    ),
+    _linea(
+      boletaId,
+      'd4',
+      'r4',
+      'DOM',
+      'Domingos y feriados',
+      'HABER',
+      4,
+      cantidad: 2,
+      monto: 465.64,
+    ),
+    _linea(
+      boletaId,
+      'd7',
+      'r7',
+      'CNS',
+      'Aporte patronal CNS',
+      'APORTE_PATRONAL',
+      30,
+      base: 7362.50,
+      porcentaje: 10,
+      monto: 736.25,
+    ),
+  ];
+
+  /// Una fila de boleta_detalle con TODAS sus columnas: id, boleta_id,
+  /// regla_id, codigo, nombre, tipo, secuencia, cantidad, base,
+  /// porcentaje, monto.
+  static Map<String, dynamic> _linea(
+    String boletaId,
+    String id,
+    String reglaId,
+    String codigo,
+    String nombre,
+    String tipo,
+    int secuencia, {
+    num? cantidad,
+    num? base,
+    num? porcentaje,
+    required num monto,
+  }) => {
+    'id': '$boletaId-$id',
+    'boleta_id': boletaId,
+    'regla_id': reglaId,
+    'codigo': codigo,
+    'nombre': nombre,
+    'tipo': tipo,
+    'secuencia': secuencia,
+    'cantidad': cantidad,
+    'base': base,
+    'porcentaje': porcentaje,
+    'monto': monto,
+  };
 }
 
 /// El colaborador todavía no tiene ninguna boleta generada.
 class BoletasServiceVacio extends BoletasService {
-  BoletasServiceVacio() : super(_clienteInerte(), MemoryTokenStorage());
-
-  @override
-  Future<List<BoletaPago>> mias() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    return const [];
-  }
+  BoletasServiceVacio()
+    : super(
+        clienteFalso(
+          (p) => p.es('GET', '/periodos-nomina') || p.es('GET', '/boletas')
+              ? const <Object>[]
+              : throw ErrorFalso.rutaDesconocida(p),
+          demora: const Duration(milliseconds: 500),
+        ),
+        sesionFalsa(),
+      );
 }
 
 /// Lanza un error de red: para la captura del estado "con error".
 class BoletasServiceError extends BoletasService {
-  BoletasServiceError() : super(_clienteInerte(), MemoryTokenStorage());
-
-  @override
-  Future<List<BoletaPago>> mias() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    throw const AppException(
-      'No se pudieron cargar tus boletas. '
-      'Revisa tu conexión e inténtalo de nuevo.',
-      statusCode: 503,
-    );
-  }
-
-  @override
-  Future<BoletaPago> detalle(String boletaId) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    throw const AppException(
-      'No se pudo cargar el detalle de la boleta. '
-      'Revisa tu conexión e inténtalo de nuevo.',
-      statusCode: 503,
-    );
-  }
+  BoletasServiceError()
+    : super(
+        clienteFalso(
+          (p) => throw ErrorFalso(
+            503,
+            p.ruta.startsWith('/boletas/')
+                ? 'No se pudo cargar el detalle de la boleta. '
+                      'Revisa tu conexión e inténtalo de nuevo.'
+                : 'No se pudieron cargar tus boletas. '
+                      'Revisa tu conexión e inténtalo de nuevo.',
+          ),
+          demora: const Duration(milliseconds: 500),
+        ),
+        sesionFalsa(),
+      );
 }

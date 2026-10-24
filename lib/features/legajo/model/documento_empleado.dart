@@ -42,7 +42,7 @@ class DocumentoEmpleado {
     this.fechaCarga,
   });
 
-  /// >>> VERIFICA estas claves contra /docs y ajústalas si difieren. <<<
+  /// Lee SOLO las columnas de la tabla "documento_empleado" del diagrama.
   /// El endpoint todavía no existe (T3-02 solo cubre el legajo de la web).
   factory DocumentoEmpleado.fromJson(Map<String, dynamic> json) {
     return DocumentoEmpleado(
@@ -50,9 +50,7 @@ class DocumentoEmpleado {
       empleadoId: leerId(json['empleado_id']),
       tipo: (json['tipo'] ?? 'OTRO').toString(),
       nombre: (json['nombre'] ?? '').toString(),
-      // T3-02 llama "archivo" a la columna; el contrato de T3-27 la llama
-      // "archivo_url". Se aceptan las dos.
-      archivoUrl: _texto(json['archivo_url'] ?? json['archivo']),
+      archivoUrl: _texto(json['archivo_url']),
       fechaEmision: _fecha(json['fecha_emision']),
       fechaVencimiento: _fecha(json['fecha_vencimiento']),
       fechaCarga: _fecha(json['fecha_carga']),

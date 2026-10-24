@@ -39,26 +39,25 @@ class SolicitudAusencia {
   final DateTime? fechaSolicitud;
   final DateTime? fechaRespuesta;
 
-  /// >>> VERIFICA contra /docs <<<  La tabla guarda empleado_id, pero el jefe
-  /// necesita ver un nombre, no un identificador.
+  // ---- Lo de abajo NO viene en la fila de solicitud_ausencia: lo une
+  // ---- AprobacionesService con [conRelaciones] a partir de las llaves.
+
+  /// Nombre del empleado cuyo id es [empleadoId]. El jefe necesita ver un
+  /// nombre, no un identificador. "" mientras no se resuelva.
   final String solicitante;
 
-  /// >>> VERIFICA contra /docs <<<  Cargo del solicitante, para dar contexto.
-  final String? cargoSolicitante;
-
-  /// >>> VERIFICA contra /docs <<<  La tabla guarda tipo_ausencia_id; aquí se
-  /// espera el tipo ya resuelto, porque de él depende si se pide documento y
-  /// si se enseña el saldo de vacaciones.
+  /// La fila de tipo_ausencia cuyo id es [tipoAusenciaId]. De ella depende
+  /// si se pide documento y si se enseña el saldo de vacaciones.
   final TipoAusencia? tipo;
 
-  /// Saldo de vacaciones del solicitante. Solo tiene sentido cuando el tipo
-  /// descuenta vacación. Viene en el detalle, no en la lista.
+  /// La fila de saldo_vacacion del empleado. Solo tiene sentido cuando el
+  /// tipo descuenta vacación. Se une en el detalle, no en la lista.
   final SaldoVacacion? saldo;
 
   const SolicitudAusencia({
     required this.id,
-    required this.solicitante,
     required this.estado,
+    this.solicitante = '',
     this.empresaId,
     this.empleadoId,
     this.tipoAusenciaId,
@@ -72,20 +71,13 @@ class SolicitudAusencia {
     this.observacionAprobador,
     this.fechaSolicitud,
     this.fechaRespuesta,
-    this.cargoSolicitante,
     this.tipo,
     this.saldo,
   });
 
-  /// >>> VERIFICA estas claves contra /docs y ajústalas si difieren. <<<
-  factory SolicitudAusencia.fromJson(Map<String, dynamic> json) {
-    // El backend puede devolver el objeto directo o envuelto, igual que en
-    // las otras features.
-    final cuerpo =
-        (json['data'] ?? json['solicitud'] ?? json) as Map<String, dynamic>;
-
-    final tipoJson = cuerpo['tipo_ausencia'] ?? cuerpo['tipo'];
-    final saldoJson = cuerpo['saldo_vacacion'] ?? cuerpo['saldo'];
+  /// Lee SOLO las columnas de la tabla "solicitud_ausencia" del diagrama.
+  /// El nombre, el tipo y el saldo se unen después con [conRelaciones].
+  factory SolicitudAusencia.fromJson(Map<String, dynamic> cuerpo) {
     final crudo = cuerpo['estado']?.toString();
 
     return SolicitudAusencia(
@@ -104,16 +96,34 @@ class SolicitudAusencia {
       observacionAprobador: _texto(cuerpo['observacion_aprobador']),
       fechaSolicitud: _parseFecha(cuerpo['fecha_solicitud']),
       fechaRespuesta: _parseFecha(cuerpo['fecha_respuesta']),
-      solicitante: _solicitante(cuerpo),
-      cargoSolicitante: _anidado(cuerpo, 'empleado', 'cargo', 'cargo'),
-      tipo: tipoJson is Map<String, dynamic>
-          ? TipoAusencia.fromJson(tipoJson)
-          : null,
-      saldo: saldoJson is Map<String, dynamic>
-          ? SaldoVacacion.fromJson(saldoJson)
-          : null,
     );
   }
+
+  /// La misma solicitud con lo que se resolvió por sus llaves.
+  SolicitudAusencia conRelaciones({
+    String? solicitante,
+    TipoAusencia? tipo,
+    SaldoVacacion? saldo,
+  }) => SolicitudAusencia(
+    id: id,
+    empresaId: empresaId,
+    empleadoId: empleadoId,
+    tipoAusenciaId: tipoAusenciaId,
+    aprobadorId: aprobadorId,
+    fechaInicio: fechaInicio,
+    fechaFin: fechaFin,
+    diasSolicitados: diasSolicitados,
+    motivo: motivo,
+    documentoUrl: documentoUrl,
+    estado: estado,
+    estadoCrudo: estadoCrudo,
+    observacionAprobador: observacionAprobador,
+    fechaSolicitud: fechaSolicitud,
+    fechaRespuesta: fechaRespuesta,
+    solicitante: solicitante ?? this.solicitante,
+    tipo: tipo ?? this.tipo,
+    saldo: saldo ?? this.saldo,
+  );
 
   /// >>> VERIFICA contra /docs <<<  Se aceptan las familias más probables
   /// en español; lo que no encaje cae en [EstadoSolicitud.otro].
@@ -126,43 +136,6 @@ class SolicitudAusencia {
       return EstadoSolicitud.cancelada;
     }
     return EstadoSolicitud.otro;
-  }
-
-  /// El nombre puede venir plano ("solicitante", "empleado_nombre") o
-  /// anidado en "empleado": {"nombres": ..., "apellidos": ...}.
-  static String _solicitante(Map<String, dynamic> cuerpo) {
-    for (final clave in ['solicitante', 'empleado_nombre']) {
-      final directo = _texto(cuerpo[clave]);
-      if (directo != null) return directo;
-    }
-
-    final sub = cuerpo['empleado'];
-    if (sub is Map) {
-      final partes = [
-        _texto(sub['nombres']) ?? '',
-        _texto(sub['apellidos']) ?? '',
-      ].where((s) => s.isNotEmpty);
-      if (partes.isNotEmpty) return partes.join(' ');
-
-      final nombre = _texto(sub['nombre']);
-      if (nombre != null) return nombre;
-    }
-
-    return '';
-  }
-
-  static String? _anidado(
-    Map<String, dynamic> cuerpo,
-    String objeto,
-    String campo,
-    String plano,
-  ) {
-    final directo = _texto(cuerpo[plano]);
-    if (directo != null) return directo;
-
-    final sub = cuerpo[objeto];
-    if (sub is Map) return _texto(sub[campo]);
-    return null;
   }
 
   static DateTime? _parseFecha(dynamic valor) {

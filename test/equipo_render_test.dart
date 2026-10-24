@@ -5,21 +5,31 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
+import 'package:mobile_ssas_rrhh/features/asistencia/model/asistencia.dart';
 import 'package:mobile_ssas_rrhh/features/auth/storage/token_storage.dart';
 import 'package:mobile_ssas_rrhh/features/equipo/data/equipo_service.dart';
 import 'package:mobile_ssas_rrhh/features/equipo/data/equipo_service_falso.dart';
+import 'package:mobile_ssas_rrhh/features/equipo/model/contrato.dart';
 import 'package:mobile_ssas_rrhh/features/equipo/model/miembro_equipo.dart';
 import 'package:mobile_ssas_rrhh/features/equipo/ui/equipo_page.dart';
 import 'package:mobile_ssas_rrhh/features/equipo/ui/widgets/miembro_card.dart';
 import 'package:mobile_ssas_rrhh/shared/api/http_client.dart';
+import 'package:mobile_ssas_rrhh/shared/referencias/referencias.dart';
 import 'package:mobile_ssas_rrhh/shared/theme/app_theme.dart';
 
 Widget _app(Widget hijo) => MaterialApp(theme: AppTheme.light, home: hijo);
 
-MiembroEquipo _m(Map<String, dynamic>? asistencia) => MiembroEquipo.fromJson({
-  'empleado': {'id': 'e1', 'nombres': 'Ana', 'apellido_paterno': 'Rojas'},
-  'asistencia': asistencia,
-});
+/// Una persona con la fila de asistencia [asistencia] (solo columnas de la
+/// tabla), o sin fila si es null.
+MiembroEquipo _m(Map<String, dynamic>? asistencia) => MiembroEquipo(
+  contrato: const Contrato(id: 'c1', empleadoId: 'e1'),
+  empleado: const EmpleadoRef(
+    id: 'e1',
+    nombres: 'Ana',
+    apellidoPaterno: 'Rojas',
+  ),
+  asistencia: asistencia == null ? null : Asistencia.fromJson(asistencia),
+);
 
 void main() {
   group('estado del día', () {
@@ -56,79 +66,103 @@ void main() {
         'Falta injustificada',
       );
     });
+
+    test('sin nombre resuelto muestra el número de contrato', () {
+      const m = MiembroEquipo(
+        contrato: Contrato(id: 'c1', numeroContrato: 'CTR-2026-001'),
+      );
+      expect(m.nombreCompleto, 'Contrato CTR-2026-001');
+      expect(m.iniciales, '?');
+    });
   });
 
   group('contrato del API', () {
-    test('empleado plano o anidado, cargo como objeto o texto', () {
-      final anidado = MiembroEquipo.fromJson({
-        'empleado': {
-          'id': '9b1c7e52-5f3a-4c1d-8e2b-1d0f6a7c3e90',
-          'nombres': 'Lucía',
-          'apellido_paterno': 'Fernández',
-          'apellido_materno': 'Rojas',
-        },
-        'cargo': {'id': 'c2', 'nombre': 'Asistente de RR. HH.'},
-      });
-      expect(anidado.id, '9b1c7e52-5f3a-4c1d-8e2b-1d0f6a7c3e90');
-      expect(anidado.nombreCompleto, 'Lucía Fernández Rojas');
-      expect(anidado.iniciales, 'LF');
-      expect(anidado.cargo, 'Asistente de RR. HH.');
-
-      final plano = MiembroEquipo.fromJson({
-        'empleado_id': 'e15',
-        'nombres': 'Rosa',
-        'apellido_paterno': 'Mamani',
-        'cargo': 'Auxiliar contable',
-      });
-      expect(plano.id, 'e15');
-      expect(plano.nombreCompleto, 'Rosa Mamani');
-      expect(plano.cargo, 'Auxiliar contable');
+    test('Contrato lee las 19 columnas de la tabla', () {
+      final c = Contrato.fromJson(EquipoServiceFalso.contratos.first);
+      expect(c.id, 'c12');
+      expect(c.empleadoId, 'e12');
+      expect(c.cargoId, 'g3');
+      expect(c.jefeDirectoId, 'e1');
+      expect(c.tipoContrato, 'INDEFINIDO');
+      expect(c.jornada, 'TIEMPO_COMPLETO');
+      expect(c.salarioBasico, 6500);
+      expect(c.esVigente, isTrue);
+      // Numeric de Postgres como texto.
+      expect(
+        Contrato.fromJson({'id': 'x', 'salario_basico': '6500.50'})
+            .salarioBasico,
+        6500.5,
+      );
     });
 
-    test(
-      'pide /empleados/me/equipo con el token y ordena por nombre',
-      () async {
-        final peticiones = <http.Request>[];
-        final cliente = MockClient((req) async {
-          peticiones.add(req);
-          return http.Response.bytes(
-            utf8.encode(
-              jsonEncode({
-                'items': [
-                  {
-                    'empleado': {
-                      'id': 'u2',
-                      'nombres': 'Zoe',
-                      'apellido_paterno': 'Paz',
-                    },
-                  },
-                  {
-                    'empleado': {
-                      'id': 'u1',
-                      'nombres': 'Ana',
-                      'apellido_paterno': 'Ríos',
-                    },
-                  },
-                ],
-              }),
-            ),
-            200,
-          );
-        });
-        final storage = MemoryTokenStorage();
-        await storage.saveAccessToken('token-jefe');
-        final servicio = EquipoService(
-          AppHttpClient(baseUrl: 'https://api.test/api/v1', client: cliente),
-          storage,
-        );
+    test('une contrato, empleado, cargo y asistencia por sus llaves', () async {
+      final peticiones = <http.Request>[];
+      final cliente = MockClient((req) async {
+        peticiones.add(req);
+        final cuerpo = switch (req.url.path) {
+          '/api/v1/contratos/mi-equipo' => [
+            {
+              'id': 'c2',
+              'empleado_id': 'u2',
+              'cargo_id': 'g1',
+              'estado': 'VIGENTE',
+            },
+            {
+              'id': 'c1',
+              'empleado_id': 'u1',
+              'cargo_id': 'g1',
+              'estado': 'VIGENTE',
+            },
+            // Contrato cerrado: no debe aparecer.
+            {
+              'id': 'c0',
+              'empleado_id': 'u1',
+              'cargo_id': 'g9',
+              'estado': 'FINALIZADO',
+            },
+          ],
+          '/api/v1/asistencias' => [
+            {'id': 'a1', 'empleado_id': 'u1', 'hora_entrada': '08:00:00'},
+          ],
+          '/api/v1/empleados' => [
+            {'id': 'u1', 'nombres': 'Ana', 'apellido_paterno': 'Ríos'},
+            {'id': 'u2', 'nombres': 'Zoe', 'apellido_paterno': 'Paz'},
+          ],
+          '/api/v1/cargos' => [
+            {'id': 'g1', 'nombre': 'Contadora'},
+          ],
+          _ => throw StateError('ruta inesperada ${req.url}'),
+        };
+        return http.Response.bytes(utf8.encode(jsonEncode(cuerpo)), 200);
+      });
+      final storage = MemoryTokenStorage();
+      await storage.saveAccessToken('token-jefe');
+      final servicio = EquipoService(
+        AppHttpClient(baseUrl: 'https://api.test/api/v1', client: cliente),
+        storage,
+        hoy: () => DateTime(2026, 10, 24, 9, 30),
+      );
 
-        final equipo = await servicio.miEquipo();
+      final equipo = await servicio.miEquipo();
 
-        expect(peticiones.single.url.path, '/api/v1/empleados/me/equipo');
-        expect(peticiones.single.headers['authorization'], 'Bearer token-jefe');
-        expect(equipo.map((m) => m.nombreCompleto), ['Ana Ríos', 'Zoe Paz']);
-      },
-    );
+      expect(
+        peticiones.every(
+          (r) => r.headers['authorization'] == 'Bearer token-jefe',
+        ),
+        isTrue,
+      );
+      final asistencia = peticiones.firstWhere(
+        (r) => r.url.path == '/api/v1/asistencias',
+      );
+      expect(asistencia.url.queryParameters['fecha'], '2026-10-24');
+
+      expect(equipo.map((m) => m.nombreCompleto), ['Ana Ríos', 'Zoe Paz']);
+      expect(equipo.map((m) => m.cargoNombre), ['Contadora', 'Contadora']);
+      expect(equipo.map((m) => m.estadoDia), [
+        EstadoDia.enJornada,
+        EstadoDia.sinMarcar,
+      ]);
+    });
   });
 
   testWidgets('con datos: resumen del día y lista por nombre', (tester) async {

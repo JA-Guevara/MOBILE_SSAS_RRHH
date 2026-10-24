@@ -14,7 +14,7 @@ class MiembroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cargo = miembro.cargo;
+    final cargo = miembro.cargoNombre;
 
     return Card(
       color: AppColors.carta,
