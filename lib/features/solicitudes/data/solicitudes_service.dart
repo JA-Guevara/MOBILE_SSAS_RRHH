@@ -35,7 +35,7 @@ class SolicitudesService {
       // Misma ruta que usa la bandeja del jefe (T3-22).
       // >>> VERIFICA esta ruta en /docs. <<<  Todavía no existe (T3-06).
       _client.get('/tipos-ausencia', accessToken: token),
-      _saldo(token),
+      leerSaldoMio(_client, token),
     ]);
 
     final tipos = filasDe(r[0])
@@ -78,35 +78,37 @@ class SolicitudesService {
     return SolicitudAusencia.fromJson(respuesta)
         .conRelaciones(tipo: solicitud.tipo);
   }
+}
 
-  /// El saldo de la gestión más reciente del colaborador, o null si no
-  /// tiene ninguno.
-  Future<SaldoVacacion?> _saldo(String? token) async {
-    final Object? respuesta;
-    try {
-      // >>> VERIFICA esta ruta en /docs. <<<  Propuesta del móvil: hoy
-      // ningún endpoint dice qué empleado es el usuario (hallazgo H-2 de
-      // T3-23), así que el backend tiene que resolverlo con el token.
-      respuesta = await _client.get('/saldos-vacacion/mio', accessToken: token);
-    } on AppException catch (e) {
-      // Sin saldo asignado no es un error: la pantalla lo dice y deja
-      // pedir los demás tipos de ausencia.
-      if (e.statusCode == 404) return null;
-      rethrow;
-    }
-
-    // Puede venir una sola fila o la lista de todas sus gestiones.
-    final filas =
-        respuesta is Map<String, dynamic> &&
-            !respuesta.containsKey('items') &&
-            !respuesta.containsKey('data')
-        ? [respuesta]
-        : filasDe(respuesta);
-
-    final saldos = filas.map(SaldoVacacion.fromJson).toList()
-      ..sort((a, b) => (a.gestion ?? 0).compareTo(b.gestion ?? 0));
-    return saldos.isEmpty ? null : saldos.last;
+/// El saldo de vacaciones del colaborador en su gestión más reciente, o
+/// null si no tiene ninguno.
+///
+/// Es función suelta y no método porque la usan dos pantallas: solicitar
+/// permiso (T3-19) y mis días trabajados (T3-21).
+Future<SaldoVacacion?> leerSaldoMio(AppHttpClient client, String? token) async {
+  final Object? respuesta;
+  try {
+    // >>> VERIFICA esta ruta en /docs. <<<  Propuesta del móvil: hoy
+    // ningún endpoint dice qué empleado es el usuario (hallazgo H-2 de
+    // T3-23), así que el backend tiene que resolverlo con el token.
+    respuesta = await client.get('/saldos-vacacion/mio', accessToken: token);
+  } on AppException catch (e) {
+    // Sin saldo asignado no es un error: la pantalla lo dice y sigue.
+    if (e.statusCode == 404) return null;
+    rethrow;
   }
+
+  // Puede venir una sola fila o la lista de todas sus gestiones.
+  final filas =
+      respuesta is Map<String, dynamic> &&
+          !respuesta.containsKey('items') &&
+          !respuesta.containsKey('data')
+      ? [respuesta]
+      : filasDe(respuesta);
+
+  final saldos = filas.map(SaldoVacacion.fromJson).toList()
+    ..sort((a, b) => (a.gestion ?? 0).compareTo(b.gestion ?? 0));
+  return saldos.isEmpty ? null : saldos.last;
 }
 
 /// Traduce el fallo al cargar a algo que el colaborador entienda, igual que

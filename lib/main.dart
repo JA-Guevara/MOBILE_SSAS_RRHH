@@ -13,6 +13,8 @@ import 'package:mobile_ssas_rrhh/features/equipo/data/equipo_service_falso.dart'
 import 'package:mobile_ssas_rrhh/features/equipo/ui/equipo_page.dart';
 import 'package:mobile_ssas_rrhh/features/legajo/data/legajo_service_falso.dart';
 import 'package:mobile_ssas_rrhh/features/legajo/ui/legajo_page.dart';
+import 'package:mobile_ssas_rrhh/features/mis_dias/data/mis_dias_service_falso.dart';
+import 'package:mobile_ssas_rrhh/features/mis_dias/ui/mis_dias_page.dart';
 import 'package:mobile_ssas_rrhh/features/solicitudes/data/solicitudes_service_falso.dart';
 import 'package:mobile_ssas_rrhh/features/solicitudes/ui/solicitar_ausencia_page.dart';
 // Los servicios REALES del Sprint 3. Los usan las líneas "BACKEND REAL"
@@ -28,6 +30,8 @@ import 'package:mobile_ssas_rrhh/features/boletas/data/boletas_service.dart';
 import 'package:mobile_ssas_rrhh/features/equipo/data/equipo_service.dart';
 // ignore: unused_import
 import 'package:mobile_ssas_rrhh/features/legajo/data/legajo_service.dart';
+// ignore: unused_import
+import 'package:mobile_ssas_rrhh/features/mis_dias/data/mis_dias_service.dart';
 // ignore: unused_import
 import 'package:mobile_ssas_rrhh/features/solicitudes/data/solicitudes_service.dart';
 import 'package:mobile_ssas_rrhh/shared/api/http_client.dart';
@@ -67,7 +71,8 @@ import 'package:mobile_ssas_rrhh/features/vacantes/data/vacantes_service.dart';
 ///   otra pantalla lee sus variables.
 ///
 ///   Aquí viven el Sprint 1 (T1-18 y T1-20), el Sprint 2 (T2-18, T2-19 y
-///   T2-20) y el Sprint 3 (T3-18, T3-19, T3-20, T3-22, T3-27 y T3-29). Cada
+///   T2-20) y el Sprint 3 (T3-18, T3-19, T3-20, T3-21, T3-22, T3-27 y
+///   T3-29). Cada
 ///   pantalla nueva añade tres cosas: su valor al enum [Pantalla], su línea
 ///   al mapa [pantallas] y su bloque MODO. Nada más.
 void main() {
@@ -80,6 +85,7 @@ void main() {
   // const pantalla = Pantalla.entrevista;  // T2-19
   // const pantalla = Pantalla.portal;      // T1-18 y T1-20
   // const pantalla = Pantalla.asistencia;  // T3-18
+  // const pantalla = Pantalla.misDias;     // T3-21
   // const pantalla = Pantalla.boletas;     // T3-20
   // const pantalla = Pantalla.solicitud;   // T3-19
   // const pantalla = Pantalla.aprobaciones; // T3-22
@@ -99,6 +105,7 @@ enum Pantalla {
   ranking,
   entrevista,
   asistencia,
+  misDias,
   boletas,
   solicitud,
   aprobaciones,
@@ -124,6 +131,7 @@ final Map<Pantalla, Widget Function()> pantallas = {
   Pantalla.ranking: _ranking,
   Pantalla.entrevista: _entrevista,
   Pantalla.asistencia: _asistencia,
+  Pantalla.misDias: _misDias,
   Pantalla.boletas: _boletas,
   Pantalla.solicitud: _solicitud,
   Pantalla.aprobaciones: _aprobaciones,
@@ -348,6 +356,21 @@ Widget _asistencia() {
   return AsistenciaPage(service: servicio, ubicacion: ubicacion);
 }
 
+/// ===== MODO · mis días trabajados y saldo de vacaciones (T3-21) =====
+/// El backend todavía no tiene asistencia (T3-05) ni saldo_vacacion
+/// (T3-06): solo servicios falsos. Las marcas falsas se arman hasta hoy.
+/// Descomenta UNA sola línea:
+Widget _misDias() {
+  // final servicio = MisDiasService(backendReal(), sesionReal()); // BACKEND REAL
+  final servicio = MisDiasServiceFalso(); // CON DÍAS
+  // final servicio = MisDiasServiceVacio();      // MES SIN MARCAS
+  // final servicio = MisDiasServiceSinSaldo();   // SIN SALDO
+  // final servicio = MisDiasServiceError();      // CON ERROR
+  // final servicio = MisDiasServiceSinSesion();  // SESIÓN EXPIRADA
+
+  return MisDiasPage(service: servicio);
+}
+
 /// ============= MODO · mis boletas de pago (T3-20) ================
 /// El backend todavía no tiene nómina (T3-09): solo servicios falsos.
 /// Toca una boleta para abrir su detalle. Descomenta UNA sola línea:
@@ -436,6 +459,7 @@ const _titulosMenu = {
   Pantalla.ranking: ('Ranking del reclutador', 'T2-20'),
   Pantalla.entrevista: ('Confirmar entrevista', 'T2-19'),
   Pantalla.asistencia: ('Marcar asistencia con GPS', 'T3-18'),
+  Pantalla.misDias: ('Mis días trabajados y saldo de vacaciones', 'T3-21'),
   Pantalla.boletas: ('Mis boletas de pago', 'T3-20'),
   Pantalla.solicitud: ('Solicitar permiso o vacaciones', 'T3-19'),
   Pantalla.aprobaciones: ('Bandeja del jefe: aprobar o rechazar', 'T3-22'),
