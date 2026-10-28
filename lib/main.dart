@@ -13,6 +13,8 @@ import 'package:mobile_ssas_rrhh/features/equipo/data/equipo_service_falso.dart'
 import 'package:mobile_ssas_rrhh/features/equipo/ui/equipo_page.dart';
 import 'package:mobile_ssas_rrhh/features/legajo/data/legajo_service_falso.dart';
 import 'package:mobile_ssas_rrhh/features/legajo/ui/legajo_page.dart';
+import 'package:mobile_ssas_rrhh/features/mi_contrato/data/mi_contrato_service_falso.dart';
+import 'package:mobile_ssas_rrhh/features/mi_contrato/ui/mi_contrato_page.dart';
 import 'package:mobile_ssas_rrhh/features/mis_dias/data/mis_dias_service_falso.dart';
 import 'package:mobile_ssas_rrhh/features/mis_dias/ui/mis_dias_page.dart';
 import 'package:mobile_ssas_rrhh/features/solicitudes/data/solicitudes_service_falso.dart';
@@ -30,6 +32,8 @@ import 'package:mobile_ssas_rrhh/features/boletas/data/boletas_service.dart';
 import 'package:mobile_ssas_rrhh/features/equipo/data/equipo_service.dart';
 // ignore: unused_import
 import 'package:mobile_ssas_rrhh/features/legajo/data/legajo_service.dart';
+// ignore: unused_import
+import 'package:mobile_ssas_rrhh/features/mi_contrato/data/mi_contrato_service.dart';
 // ignore: unused_import
 import 'package:mobile_ssas_rrhh/features/mis_dias/data/mis_dias_service.dart';
 // ignore: unused_import
@@ -71,8 +75,8 @@ import 'package:mobile_ssas_rrhh/features/vacantes/data/vacantes_service.dart';
 ///   otra pantalla lee sus variables.
 ///
 ///   Aquí viven el Sprint 1 (T1-18 y T1-20), el Sprint 2 (T2-18, T2-19 y
-///   T2-20) y el Sprint 3 (T3-18, T3-19, T3-20, T3-21, T3-22, T3-27 y
-///   T3-29). Cada
+///   T2-20) y el Sprint 3 (T3-18, T3-19, T3-20, T3-21, T3-22, T3-27,
+///   T3-28 y T3-29). Cada
 ///   pantalla nueva añade tres cosas: su valor al enum [Pantalla], su línea
 ///   al mapa [pantallas] y su bloque MODO. Nada más.
 void main() {
@@ -90,6 +94,7 @@ void main() {
   // const pantalla = Pantalla.solicitud;   // T3-19
   // const pantalla = Pantalla.aprobaciones; // T3-22
   // const pantalla = Pantalla.legajo;      // T3-27
+  // const pantalla = Pantalla.miContrato;  // T3-28
   // const pantalla = Pantalla.equipo;      // T3-29
 
   // =================================================================
@@ -110,6 +115,7 @@ enum Pantalla {
   solicitud,
   aprobaciones,
   legajo,
+  miContrato,
   equipo,
 }
 
@@ -136,6 +142,7 @@ final Map<Pantalla, Widget Function()> pantallas = {
   Pantalla.solicitud: _solicitud,
   Pantalla.aprobaciones: _aprobaciones,
   Pantalla.legajo: _legajo,
+  Pantalla.miContrato: _miContrato,
   Pantalla.equipo: _equipo,
 };
 
@@ -426,6 +433,21 @@ Widget _legajo() {
   return LegajoPage(service: servicio);
 }
 
+/// ================ MODO · mi contrato vigente (T3-28) ===============
+/// El backend todavía no tiene contrato (T3-03): solo servicios falsos.
+/// Descomenta UNA sola línea:
+Widget _miContrato() {
+  // final servicio = MiContratoService(backendReal(), sesionReal()); // BACKEND REAL
+  final servicio = MiContratoServiceFalso(); // VIGENTE + HISTORIAL
+  // final servicio = MiContratoServicePrimerContrato(); // SIN HISTORIAL
+  // final servicio = MiContratoServiceFinalizado();     // SIN VIGENTE
+  // final servicio = MiContratoServiceVacio();          // SIN CONTRATOS
+  // final servicio = MiContratoServiceError();          // CON ERROR
+  // final servicio = MiContratoServiceSinSesion();      // SESIÓN EXPIRADA
+
+  return MiContratoPage(service: servicio);
+}
+
 /// ============== MODO · equipo a mi cargo (T3-29) =================
 /// El backend todavía no tiene contrato ni asistencia (T3-01, T3-05):
 /// solo servicios falsos. Descomenta UNA sola línea:
@@ -464,6 +486,7 @@ const _titulosMenu = {
   Pantalla.solicitud: ('Solicitar permiso o vacaciones', 'T3-19'),
   Pantalla.aprobaciones: ('Bandeja del jefe: aprobar o rechazar', 'T3-22'),
   Pantalla.legajo: ('Mi legajo digital', 'T3-27'),
+  Pantalla.miContrato: ('Mi contrato vigente', 'T3-28'),
   Pantalla.equipo: ('Equipo a mi cargo', 'T3-29'),
 };
 
