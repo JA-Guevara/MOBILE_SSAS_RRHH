@@ -13,6 +13,8 @@ import 'package:mobile_ssas_rrhh/features/equipo/data/equipo_service_falso.dart'
 import 'package:mobile_ssas_rrhh/features/equipo/ui/equipo_page.dart';
 import 'package:mobile_ssas_rrhh/features/legajo/data/legajo_service_falso.dart';
 import 'package:mobile_ssas_rrhh/features/legajo/ui/legajo_page.dart';
+import 'package:mobile_ssas_rrhh/features/solicitudes/data/solicitudes_service_falso.dart';
+import 'package:mobile_ssas_rrhh/features/solicitudes/ui/solicitar_ausencia_page.dart';
 // Los servicios REALES del Sprint 3. Los usan las líneas "BACKEND REAL"
 // comentadas de cada bloque MODO; se quedan aunque ahora no se lean.
 // ignore: unused_import
@@ -26,6 +28,8 @@ import 'package:mobile_ssas_rrhh/features/boletas/data/boletas_service.dart';
 import 'package:mobile_ssas_rrhh/features/equipo/data/equipo_service.dart';
 // ignore: unused_import
 import 'package:mobile_ssas_rrhh/features/legajo/data/legajo_service.dart';
+// ignore: unused_import
+import 'package:mobile_ssas_rrhh/features/solicitudes/data/solicitudes_service.dart';
 import 'package:mobile_ssas_rrhh/shared/api/http_client.dart';
 import 'package:mobile_ssas_rrhh/features/entrevista/data/entrevista_service_falso.dart';
 import 'package:mobile_ssas_rrhh/features/entrevista/ui/consulta_entrevista_page.dart';
@@ -63,7 +67,7 @@ import 'package:mobile_ssas_rrhh/features/vacantes/data/vacantes_service.dart';
 ///   otra pantalla lee sus variables.
 ///
 ///   Aquí viven el Sprint 1 (T1-18 y T1-20), el Sprint 2 (T2-18, T2-19 y
-///   T2-20) y el Sprint 3 (T3-18, T3-20, T3-22, T3-27 y T3-29). Cada
+///   T2-20) y el Sprint 3 (T3-18, T3-19, T3-20, T3-22, T3-27 y T3-29). Cada
 ///   pantalla nueva añade tres cosas: su valor al enum [Pantalla], su línea
 ///   al mapa [pantallas] y su bloque MODO. Nada más.
 void main() {
@@ -77,6 +81,7 @@ void main() {
   // const pantalla = Pantalla.portal;      // T1-18 y T1-20
   // const pantalla = Pantalla.asistencia;  // T3-18
   // const pantalla = Pantalla.boletas;     // T3-20
+  // const pantalla = Pantalla.solicitud;   // T3-19
   // const pantalla = Pantalla.aprobaciones; // T3-22
   // const pantalla = Pantalla.legajo;      // T3-27
   // const pantalla = Pantalla.equipo;      // T3-29
@@ -95,6 +100,7 @@ enum Pantalla {
   entrevista,
   asistencia,
   boletas,
+  solicitud,
   aprobaciones,
   legajo,
   equipo,
@@ -119,6 +125,7 @@ final Map<Pantalla, Widget Function()> pantallas = {
   Pantalla.entrevista: _entrevista,
   Pantalla.asistencia: _asistencia,
   Pantalla.boletas: _boletas,
+  Pantalla.solicitud: _solicitud,
   Pantalla.aprobaciones: _aprobaciones,
   Pantalla.legajo: _legajo,
   Pantalla.equipo: _equipo,
@@ -353,6 +360,22 @@ Widget _boletas() {
   return BoletasPage(service: servicio);
 }
 
+/// ======== MODO · solicitar permiso o vacaciones (T3-19) ===========
+/// El backend todavía no tiene tipo_ausencia, saldo_vacacion ni
+/// solicitud_ausencia (T3-06): solo servicios falsos.
+/// Descomenta UNA sola línea:
+Widget _solicitud() {
+  // final servicio = SolicitudesService(backendReal(), sesionReal()); // BACKEND REAL
+  final servicio = SolicitudesServiceFalso(); // FORMULARIO (saldo de 3 días)
+  // final servicio = SolicitudesServiceSinSaldo();  // SIN SALDO
+  // final servicio = SolicitudesServiceVacio();     // SIN TIPOS
+  // final servicio = SolicitudesServiceError();     // CON ERROR
+  // final servicio = SolicitudesServiceSinSesion(); // SESIÓN EXPIRADA
+  // final servicio = SolicitudesServiceErrorAlEnviar(); // FALLA AL ENVIAR
+
+  return SolicitarAusenciaPage(service: servicio);
+}
+
 /// ============ MODO · bandeja del jefe (T3-22) ====================
 /// El backend todavía no tiene solicitudes (T3-06): solo servicios falsos.
 /// Toca una solicitud para abrir el detalle y responderla.
@@ -414,6 +437,7 @@ const _titulosMenu = {
   Pantalla.entrevista: ('Confirmar entrevista', 'T2-19'),
   Pantalla.asistencia: ('Marcar asistencia con GPS', 'T3-18'),
   Pantalla.boletas: ('Mis boletas de pago', 'T3-20'),
+  Pantalla.solicitud: ('Solicitar permiso o vacaciones', 'T3-19'),
   Pantalla.aprobaciones: ('Bandeja del jefe: aprobar o rechazar', 'T3-22'),
   Pantalla.legajo: ('Mi legajo digital', 'T3-27'),
   Pantalla.equipo: ('Equipo a mi cargo', 'T3-29'),
