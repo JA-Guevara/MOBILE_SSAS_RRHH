@@ -58,6 +58,20 @@ class TipoAusencia {
     );
   }
 
+  /// El cuerpo para guardar los cambios del administrador (T3-30): las
+  /// columnas editables de la tabla. Sin id (va en la ruta) ni empresa_id
+  /// (el backend la saca del token).
+  Map<String, Object?> toJson() => {
+    'nombre': nombre,
+    'codigo': codigo,
+    'es_remunerado': esRemunerado,
+    'descuenta_vacacion': descuentaVacacion,
+    'dias_maximos_anio': diasMaximosAnio,
+    'requiere_aprobacion': requiereAprobacion,
+    'requiere_documento': requiereDocumento,
+    'activo': activo,
+  };
+
   /// "Vacación · no remunerado" o solo "Vacación". Lo que se muestra bajo
   /// el nombre del solicitante.
   String get subtitulo {

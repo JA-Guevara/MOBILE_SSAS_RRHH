@@ -12,7 +12,8 @@ import '../../core/errors/app_exception.dart';
 /// en web, Android, iOS y Windows, y ya estaba en pubspec.yaml.
 ///
 /// La API pública no cambió: get, post y close se usan igual que antes.
-/// postMultipart se añadió para los formularios con adjunto (T3-19).
+/// postMultipart se añadió para los formularios con adjunto (T3-19) y put
+/// para editar registros (T3-30).
 class AppHttpClient {
   AppHttpClient({required this.baseUrl, http.Client? client})
     : _client = client ?? http.Client();
@@ -26,6 +27,14 @@ class AppHttpClient {
     Map<String, Object?>? body,
     String? accessToken,
   }) => _request('POST', path, body: body, accessToken: accessToken);
+
+  /// PUT con cuerpo JSON: reemplaza un registro (T3-30). Es el verbo que
+  /// rrhh-api usa para editar, p. ej. PUT /personal/empleados/{id}/vacaciones.
+  Future<Object?> put(
+    String path, {
+    Map<String, Object?>? body,
+    String? accessToken,
+  }) => _request('PUT', path, body: body, accessToken: accessToken);
 
   /// POST multipart/form-data: campos de texto más archivos. Es el formato
   /// que FastAPI espera para un UploadFile, igual que el CV de T1-20.
@@ -70,13 +79,12 @@ class AppHttpClient {
         if (accessToken != null) 'authorization': 'Bearer $accessToken',
       };
 
-      final response = method == 'GET'
-          ? await _client.get(uri, headers: headers)
-          : await _client.post(
-              uri,
-              headers: headers,
-              body: body == null ? null : jsonEncode(body),
-            );
+      final cuerpo = body == null ? null : jsonEncode(body);
+      final response = switch (method) {
+        'GET' => await _client.get(uri, headers: headers),
+        'PUT' => await _client.put(uri, headers: headers, body: cuerpo),
+        _ => await _client.post(uri, headers: headers, body: cuerpo),
+      };
 
       return _leer(response);
     } on AppException {

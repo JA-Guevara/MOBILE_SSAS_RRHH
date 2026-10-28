@@ -19,6 +19,8 @@ import 'package:mobile_ssas_rrhh/features/mis_dias/data/mis_dias_service_falso.d
 import 'package:mobile_ssas_rrhh/features/mis_dias/ui/mis_dias_page.dart';
 import 'package:mobile_ssas_rrhh/features/solicitudes/data/solicitudes_service_falso.dart';
 import 'package:mobile_ssas_rrhh/features/solicitudes/ui/solicitar_ausencia_page.dart';
+import 'package:mobile_ssas_rrhh/features/tipos_ausencia/data/tipos_ausencia_service_falso.dart';
+import 'package:mobile_ssas_rrhh/features/tipos_ausencia/ui/tipos_ausencia_page.dart';
 // Los servicios REALES del Sprint 3. Los usan las líneas "BACKEND REAL"
 // comentadas de cada bloque MODO; se quedan aunque ahora no se lean.
 // ignore: unused_import
@@ -38,6 +40,8 @@ import 'package:mobile_ssas_rrhh/features/mi_contrato/data/mi_contrato_service.d
 import 'package:mobile_ssas_rrhh/features/mis_dias/data/mis_dias_service.dart';
 // ignore: unused_import
 import 'package:mobile_ssas_rrhh/features/solicitudes/data/solicitudes_service.dart';
+// ignore: unused_import
+import 'package:mobile_ssas_rrhh/features/tipos_ausencia/data/tipos_ausencia_service.dart';
 import 'package:mobile_ssas_rrhh/shared/api/http_client.dart';
 import 'package:mobile_ssas_rrhh/features/entrevista/data/entrevista_service_falso.dart';
 import 'package:mobile_ssas_rrhh/features/entrevista/ui/consulta_entrevista_page.dart';
@@ -76,7 +80,7 @@ import 'package:mobile_ssas_rrhh/features/vacantes/data/vacantes_service.dart';
 ///
 ///   Aquí viven el Sprint 1 (T1-18 y T1-20), el Sprint 2 (T2-18, T2-19 y
 ///   T2-20) y el Sprint 3 (T3-18, T3-19, T3-20, T3-21, T3-22, T3-27,
-///   T3-28 y T3-29). Cada
+///   T3-28, T3-29 y T3-30). Cada
 ///   pantalla nueva añade tres cosas: su valor al enum [Pantalla], su línea
 ///   al mapa [pantallas] y su bloque MODO. Nada más.
 void main() {
@@ -96,6 +100,7 @@ void main() {
   // const pantalla = Pantalla.legajo;      // T3-27
   // const pantalla = Pantalla.miContrato;  // T3-28
   // const pantalla = Pantalla.equipo;      // T3-29
+  // const pantalla = Pantalla.tiposAusencia; // T3-30
 
   // =================================================================
 
@@ -117,6 +122,7 @@ enum Pantalla {
   legajo,
   miContrato,
   equipo,
+  tiposAusencia,
 }
 
 /// Qué función construye cada pantalla.
@@ -144,6 +150,7 @@ final Map<Pantalla, Widget Function()> pantallas = {
   Pantalla.legajo: _legajo,
   Pantalla.miContrato: _miContrato,
   Pantalla.equipo: _equipo,
+  Pantalla.tiposAusencia: _tiposAusencia,
 };
 
 class AppSSAH extends StatelessWidget {
@@ -461,6 +468,23 @@ Widget _equipo() {
   return EquipoPage(service: servicio);
 }
 
+/// ========= MODO · configurar tipos de ausencia (T3-30) ============
+/// El backend ya tiene GET /personal/tipos-ausencia, pero solo con los
+/// activos y sin las ocho columnas, y todavía no tiene cómo guardar:
+/// solo servicios falsos. Toca un tipo para editarlo; lo guardado se ve al
+/// volver a la lista. Descomenta UNA sola línea:
+Widget _tiposAusencia() {
+  // final servicio = TiposAusenciaService(backendReal(), sesionReal()); // BACKEND REAL
+  final servicio = TiposAusenciaServiceFalso(); // CON TIPOS (uno inactivo)
+  // final servicio = TiposAusenciaServiceVacio();         // SIN TIPOS
+  // final servicio = TiposAusenciaServiceError();         // CON ERROR
+  // final servicio = TiposAusenciaServiceErrorAlGuardar(); // FALLA AL GUARDAR
+  // final servicio = TiposAusenciaServiceSinSesion();     // SESIÓN EXPIRADA
+  // final servicio = TiposAusenciaServiceSinPermiso();    // NO ES ADMIN (403)
+
+  return TiposAusenciaPage(service: servicio);
+}
+
 /// El cliente del backend de verdad para las líneas "BACKEND REAL" del
 /// Sprint 3: la misma URL que el portal.
 AppHttpClient backendReal() => AppHttpClient(baseUrl: _apiUrl);
@@ -488,6 +512,7 @@ const _titulosMenu = {
   Pantalla.legajo: ('Mi legajo digital', 'T3-27'),
   Pantalla.miContrato: ('Mi contrato vigente', 'T3-28'),
   Pantalla.equipo: ('Equipo a mi cargo', 'T3-29'),
+  Pantalla.tiposAusencia: ('Configurar tipos de ausencia', 'T3-30'),
 };
 
 class _MenuPantallas extends StatelessWidget {
