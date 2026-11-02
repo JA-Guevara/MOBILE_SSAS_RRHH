@@ -25,7 +25,7 @@ class LegajoService {
     // T3-02 solo cubre el legajo que ve RR. HH. desde la web. Es la
     // propuesta del equipo móvil para el autoservicio del colaborador.
     final respuesta = await _client.get(
-      '/documentos-empleado/mios',
+      '/personal/mi/documentos',
       accessToken: token,
     );
 

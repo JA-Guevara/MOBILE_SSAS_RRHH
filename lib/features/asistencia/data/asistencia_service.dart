@@ -27,20 +27,31 @@ class AsistenciaService {
   Future<Asistencia?> deHoy() async {
     final token = await _tokenStorage.readAccessToken();
 
-    final Object? respuesta;
     try {
       // >>> VERIFICA esta ruta en /docs. <<<  El endpoint todavía no existe.
-      respuesta = await _client.get('/asistencias/hoy', accessToken: token);
+      final filas = await _client.get(
+        '/personal/mi/asistencia',
+        accessToken: token,
+      );
+      if (filas is List) {
+        final hoy = DateTime.now();
+        for (final fila in filas) {
+          if (fila is Map<String, dynamic>) {
+            final fecha = DateTime.tryParse('${fila['fecha']}');
+            if (fecha?.year == hoy.year &&
+                fecha?.month == hoy.month &&
+                fecha?.day == hoy.day) {
+              return Asistencia.fromJson(fila);
+            }
+          }
+        }
+      }
+      return null;
     } on AppException catch (e) {
       // 404: todavía no hay fila de asistencia para hoy.
       if (e.statusCode == 404) return null;
       rethrow;
     }
-
-    // Un cuerpo vacío (null o {}) también significa "sin marcar".
-    if (respuesta is! Map<String, dynamic> || respuesta.isEmpty) return null;
-
-    return Asistencia.fromJson(respuesta);
   }
 
   /// Registra la hora de entrada con las coordenadas donde se marcó.
@@ -49,10 +60,9 @@ class AsistenciaService {
     required double longitud,
   }) {
     // >>> VERIFICA esta ruta y estas claves en /docs. <<<
-    return _marcar('/asistencias/entrada', {
-      'latitud_entrada': latitud,
-      'longitud_entrada': longitud,
-      'origen': Asistencia.origenMovil,
+    return _marcar('/personal/mi/asistencia/entrada', {
+      'latitud': latitud,
+      'longitud': longitud,
     });
   }
 
@@ -62,9 +72,9 @@ class AsistenciaService {
     required double longitud,
   }) {
     // >>> VERIFICA esta ruta y estas claves en /docs. <<<
-    return _marcar('/asistencias/salida', {
-      'latitud_salida': latitud,
-      'longitud_salida': longitud,
+    return _marcar('/personal/mi/asistencia/salida', {
+      'latitud': latitud,
+      'longitud': longitud,
     });
   }
 
@@ -81,7 +91,7 @@ class AsistenciaService {
       throw const AppException('El servidor no devolvió la marca registrada.');
     }
 
-    return Asistencia.fromJson(respuesta);
+    return await deHoy() ?? Asistencia.fromJson(respuesta);
   }
 }
 

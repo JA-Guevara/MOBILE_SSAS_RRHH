@@ -23,7 +23,7 @@ class MemoryTokenStorage implements TokenStorage {
 class SecureTokenStorage implements TokenStorage {
   const SecureTokenStorage();
 
-  static const _clave = 'access_token';
+  static const _clave = 'staff_access_token';
   static const _almacen = FlutterSecureStorage();
 
   @override

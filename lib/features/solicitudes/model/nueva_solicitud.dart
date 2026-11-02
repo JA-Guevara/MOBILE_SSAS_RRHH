@@ -24,7 +24,15 @@ class NuevaSolicitud {
     this.documento,
   });
 
-  int get diasSolicitados => diasHabiles(fechaInicio, fechaFin);
+  int get diasSolicitados => diasCalendario(fechaInicio, fechaFin);
+
+  static int diasCalendario(DateTime inicio, DateTime fin) =>
+      DateTime.utc(
+        fin.year,
+        fin.month,
+        fin.day,
+      ).difference(DateTime.utc(inicio.year, inicio.month, inicio.day)).inDays +
+      1;
 
   /// >>> VERIFICA estas claves contra /docs y ajústalas si difieren. <<<
   /// Los campos de texto del multipart.
@@ -32,7 +40,6 @@ class NuevaSolicitud {
     'tipo_ausencia_id': tipo.id,
     'fecha_inicio': fechaApi(fechaInicio),
     'fecha_fin': fechaApi(fechaFin),
-    'dias_solicitados': diasSolicitados.toString(),
     'motivo': motivo.trim(),
   };
 
@@ -70,16 +77,12 @@ class NuevaSolicitud {
     required SaldoVacacion? saldo,
   }) {
     if (dias == 0) {
-      return 'Las fechas elegidas no tienen días hábiles (de lunes a viernes).';
+      return 'Elige un rango de fechas válido.';
     }
 
     if (tipo.descuentaVacacion) {
       final disponibles = saldo?.diasSaldo;
-      if (disponibles == null) {
-        return 'No tienes saldo de vacaciones asignado. Consulta con '
-            'Recursos Humanos.';
-      }
-      if (dias > disponibles) {
+      if (disponibles != null && dias > disponibles) {
         return 'Saldo insuficiente: pides ${_dias(dias)} y tienes '
             '${SaldoVacacion.dias(disponibles)} disponibles.';
       }
@@ -100,7 +103,7 @@ class NuevaSolicitud {
   static String fechaCorta(DateTime f) =>
       '${_dos(f.day)}/${_dos(f.month)}/${f.year}';
 
-  static String _dias(int n) => n == 1 ? '1 día hábil' : '$n días hábiles';
+  static String _dias(int n) => n == 1 ? '1 día' : '$n días';
 
   static String _dos(int n) => n.toString().padLeft(2, '0');
 }

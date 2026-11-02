@@ -213,7 +213,7 @@ class _Contenido extends StatelessWidget {
           TarjetaSaldo(saldo: saldo, diasSolicitados: null)
         else
           const _Aviso(
-            texto: 'Todavía no tienes saldo de vacaciones asignado.',
+            texto: 'El saldo de vacaciones no está disponible para consulta en la app.',
             icono: Icons.info_outline,
           ),
         const SizedBox(height: 16),

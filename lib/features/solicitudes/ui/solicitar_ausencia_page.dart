@@ -199,7 +199,7 @@ class _FormularioState extends State<_Formulario> {
     final inicio = _inicio;
     final fin = _fin;
     if (inicio == null || fin == null) return null;
-    return NuevaSolicitud.diasHabiles(inicio, fin);
+    return NuevaSolicitud.diasCalendario(inicio, fin);
   }
 
   /// Por qué no se puede enviar con estas fechas, o null si se puede.
@@ -502,7 +502,7 @@ class _DiasSolicitados extends StatelessWidget {
     final texto = switch (d) {
       null => 'Elige las fechas',
       1 => '1 día hábil',
-      _ => '$d días hábiles',
+      _ => '$d días',
     };
 
     return Container(
@@ -572,8 +572,8 @@ class _SinSaldo extends StatelessWidget {
   Widget build(BuildContext context) {
     return const _Aviso(
       texto:
-          'Todavía no tienes saldo de vacaciones asignado. Puedes pedir '
-          'los demás tipos de ausencia.',
+          'El saldo de vacaciones no está disponible aquí. Puedes enviar la '
+          'solicitud; el servidor verificará la disponibilidad.',
       icono: Icons.info_outline,
       fondo: AppColors.ambar100,
       color: AppColors.ambar700,
@@ -645,7 +645,7 @@ class _SolicitudEnviada extends StatelessWidget {
                   etiqueta: 'Días',
                   valor: dias == 1
                       ? '1 día hábil'
-                      : '${SaldoVacacion.dias(dias)} días hábiles',
+                      : '${SaldoVacacion.dias(dias)} días',
                 ),
               if (solicitud.documentoUrl != null)
                 const _Dato(etiqueta: 'Documento', valor: 'Adjunto'),

@@ -26,7 +26,7 @@ class TiposAusenciaService {
     // incluir_inactivos, el administrador reciba también los inactivos (si
     // no, no podría reactivarlos) y las ocho columnas de la tabla.
     final respuesta = await _client.get(
-      '/personal/tipos-ausencia?incluir_inactivos=true',
+      '/personal/tipos-ausencia/configuracion',
       accessToken: token,
     );
     return filasDe(respuesta).map(TipoAusencia.fromJson).toList()

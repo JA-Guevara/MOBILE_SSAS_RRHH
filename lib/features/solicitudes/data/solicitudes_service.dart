@@ -1,6 +1,5 @@
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
-
 import 'package:mobile_ssas_rrhh/core/errors/app_exception.dart';
 import 'package:mobile_ssas_rrhh/features/aprobaciones/model/saldo_vacacion.dart';
 import 'package:mobile_ssas_rrhh/features/aprobaciones/model/solicitud_ausencia.dart';
@@ -34,7 +33,7 @@ class SolicitudesService {
     final r = await Future.wait([
       // Misma ruta que usa la bandeja del jefe (T3-22).
       // >>> VERIFICA esta ruta en /docs. <<<  Todavía no existe (T3-06).
-      _client.get('/tipos-ausencia', accessToken: token),
+      _client.get('/personal/tipos-ausencia', accessToken: token),
       leerSaldoMio(_client, token),
     ]);
 
@@ -57,25 +56,48 @@ class SolicitudesService {
 
     // >>> VERIFICA esta ruta y el nombre de la parte ("documento") en
     // /docs. <<<  Todavía no existe (T3-06).
-    final respuesta = await _client.postMultipart(
-      '/solicitudes-ausencia',
-      campos: solicitud.toFields(),
-      archivos: [
-        if (documento != null)
+    String? documentoId;
+    if (documento != null) {
+      final subido = await _client.postMultipart(
+        '/personal/mi/documentos',
+        campos: {},
+        archivos: [
           http.MultipartFile.fromBytes(
-            'documento',
+            'archivo',
             documento.bytes,
             filename: documento.nombre,
             contentType: MediaType.parse(documento.mimeType),
           ),
-      ],
+        ],
+        accessToken: token,
+      );
+      if (subido is! Map<String, dynamic> || subido['id'] == null) {
+        throw const AppException(
+          'No se pudo guardar el documento de respaldo.',
+        );
+      }
+      documentoId = subido['id'].toString();
+    }
+    final cuerpo = <String, Object?>{...solicitud.toFields()};
+    if (documentoId != null) cuerpo['documento_id'] = documentoId;
+    final respuesta = await _client.post(
+      '/personal/mi/ausencias',
+      body: cuerpo,
       accessToken: token,
     );
 
     if (respuesta is! Map<String, dynamic>) {
       throw const AppException('El servidor no devolvió la solicitud creada.');
     }
-    return SolicitudAusencia.fromJson(respuesta)
+    final solicitudes = await _client.get(
+      '/personal/mi/ausencias',
+      accessToken: token,
+    );
+    final id = respuesta['id']?.toString();
+    final detalle = filasDe(solicitudes)
+        .where((fila) => fila['id']?.toString() == id)
+        .firstOrNull;
+    return SolicitudAusencia.fromJson(detalle ?? respuesta)
         .conRelaciones(tipo: solicitud.tipo);
   }
 }
@@ -86,29 +108,8 @@ class SolicitudesService {
 /// Es función suelta y no método porque la usan dos pantallas: solicitar
 /// permiso (T3-19) y mis días trabajados (T3-21).
 Future<SaldoVacacion?> leerSaldoMio(AppHttpClient client, String? token) async {
-  final Object? respuesta;
-  try {
-    // >>> VERIFICA esta ruta en /docs. <<<  Propuesta del móvil: hoy
-    // ningún endpoint dice qué empleado es el usuario (hallazgo H-2 de
-    // T3-23), así que el backend tiene que resolverlo con el token.
-    respuesta = await client.get('/saldos-vacacion/mio', accessToken: token);
-  } on AppException catch (e) {
-    // Sin saldo asignado no es un error: la pantalla lo dice y sigue.
-    if (e.statusCode == 404) return null;
-    rethrow;
-  }
-
-  // Puede venir una sola fila o la lista de todas sus gestiones.
-  final filas =
-      respuesta is Map<String, dynamic> &&
-          !respuesta.containsKey('items') &&
-          !respuesta.containsKey('data')
-      ? [respuesta]
-      : filasDe(respuesta);
-
-  final saldos = filas.map(SaldoVacacion.fromJson).toList()
-    ..sort((a, b) => (a.gestion ?? 0).compareTo(b.gestion ?? 0));
-  return saldos.isEmpty ? null : saldos.last;
+  // El backend aún no expone un saldo propio de solo lectura.
+  return null;
 }
 
 /// Traduce el fallo al cargar a algo que el colaborador entienda, igual que

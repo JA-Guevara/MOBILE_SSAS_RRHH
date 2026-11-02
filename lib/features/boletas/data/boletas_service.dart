@@ -28,7 +28,7 @@ class BoletasService {
     // existen. Se piden las dos tablas por separado y se unen aquí por
     // boleta_pago.periodo_id = periodo_nomina.id.
     final r = await Future.wait([
-      _client.get('/boletas', accessToken: token),
+      _client.get('/nomina/mi/boletas', accessToken: token),
       _periodos(token),
     ]);
     final boletas = r[0];
@@ -56,13 +56,11 @@ class BoletasService {
     // >>> VERIFICA estas rutas en /docs. <<<  La fila de boleta_pago y
     // sus filas de boleta_detalle (boleta_detalle.boleta_id = boleta.id).
     final r = await Future.wait([
-      _client.get('/boletas/$boletaId', accessToken: token),
-      _client.get('/boletas/$boletaId/detalles', accessToken: token),
+      _client.get('/nomina/mi/boletas/$boletaId', accessToken: token),
       _periodos(token),
     ]);
     final respuesta = r[0];
-    final lineas = r[1];
-    final periodos = r[2] as Map<String, PeriodoNomina>;
+    final periodos = r[1] as Map<String, PeriodoNomina>;
 
     if (respuesta is! Map<String, dynamic>) {
       throw const AppException('El servidor no devolvió la boleta.');
@@ -71,7 +69,9 @@ class BoletasService {
     final boleta = BoletaPago.fromJson(respuesta);
     return boleta.conRelaciones(
       periodo: periodos[boleta.periodoId],
-      detalles: filasDe(lineas).map(BoletaDetalle.fromJson).toList(),
+      detalles: filasDe(respuesta['detalle'])
+          .map(BoletaDetalle.fromJson)
+          .toList(),
     );
   }
 
@@ -79,7 +79,7 @@ class BoletasService {
   /// boletas.
   Future<Map<String, PeriodoNomina>> _periodos(String? token) async {
     // >>> VERIFICA esta ruta en /docs. <<<
-    final respuesta = await _client.get('/periodos-nomina', accessToken: token);
+    final respuesta = await _client.get('/nomina/periodos', accessToken: token);
     return {
       for (final p in filasDe(respuesta).map(PeriodoNomina.fromJson)) p.id: p,
     };

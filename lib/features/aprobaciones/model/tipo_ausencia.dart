@@ -52,7 +52,7 @@ class TipoAusencia {
       esRemunerado: json['es_remunerado'] == true,
       descuentaVacacion: json['descuenta_vacacion'] == true,
       diasMaximosAnio: (json['dias_maximos_anio'] as num?)?.toInt(),
-      requiereAprobacion: json['requiere_aprobacion'] == true,
+      requiereAprobacion: json['requiere_aprobacion'] != false,
       requiereDocumento: json['requiere_documento'] == true,
       activo: json['activo'] != false,
     );
@@ -63,11 +63,9 @@ class TipoAusencia {
   /// (el backend la saca del token).
   Map<String, Object?> toJson() => {
     'nombre': nombre,
-    'codigo': codigo,
     'es_remunerado': esRemunerado,
     'descuenta_vacacion': descuentaVacacion,
     'dias_maximos_anio': diasMaximosAnio,
-    'requiere_aprobacion': requiereAprobacion,
     'requiere_documento': requiereDocumento,
     'activo': activo,
   };

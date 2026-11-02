@@ -69,7 +69,7 @@ class BoletaDetalle {
       cantidad: (json['cantidad'] as num?)?.toDouble(),
       base: (json['base'] as num?)?.toDouble(),
       porcentaje: (json['porcentaje'] as num?)?.toDouble(),
-      monto: (json['monto'] as num?)?.toDouble(),
+      monto: double.tryParse('${json['monto']}'),
     );
   }
 

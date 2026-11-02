@@ -26,18 +26,20 @@ class MiContratoService {
   Future<HistorialContratos> historial() async {
     final token = await _tokenStorage.readAccessToken();
 
-    final r = await Future.wait([
-      // >>> VERIFICA esta ruta en /docs. <<<  Todavía no existe (T3-03).
-      // Propuesta: todas las filas de "contrato" del usuario, la vigente
-      // y las anteriores.
-      _client.get('/contratos/mios', accessToken: token),
-      // Esta YA EXISTE en rrhh-api.
-      _client.get('/cargos', accessToken: token),
-    ]);
+    final contratos = await _client.get(
+      '/personal/mi/contratos',
+      accessToken: token,
+    );
+    Object? cargos;
+    try {
+      cargos = await _client.get('/cargos', accessToken: token);
+    } on AppException catch (error) {
+      if (error.statusCode != 403) rethrow;
+    }
 
     return HistorialContratos.desde(
-      filasDe(r[0]).map(Contrato.fromJson),
-      porId(filasDe(r[1]), CargoRef.fromJson, (c) => c.id),
+      filasDe(contratos).map(Contrato.fromJson),
+      porId(filasDe(cargos), CargoRef.fromJson, (c) => c.id),
     );
   }
 }

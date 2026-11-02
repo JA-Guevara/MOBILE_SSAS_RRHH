@@ -30,10 +30,7 @@ class MisDiasService {
     final r = await Future.wait([
       // >>> VERIFICA esta ruta en /docs. <<<  Todavía no existe (T3-05).
       // Propuesta: las filas de "asistencia" del usuario en ese mes.
-      _client.get(
-        '/asistencias/mias?mes=${MesTrabajado.parametroMes(primero)}',
-        accessToken: token,
-      ),
+      _client.get('/personal/mi/asistencia', accessToken: token),
       leerSaldoMio(_client, token),
     ]);
 

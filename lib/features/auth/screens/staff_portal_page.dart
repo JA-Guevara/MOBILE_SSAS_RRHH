@@ -6,6 +6,23 @@ import 'package:mobile_ssas_rrhh/features/auth/screens/postulantes_page.dart';
 import 'package:mobile_ssas_rrhh/features/auth/screens/respaldos_empresa_page.dart';
 import 'package:mobile_ssas_rrhh/features/auth/screens/suscripcion_page.dart';
 import 'package:mobile_ssas_rrhh/features/reportes/reportes_page.dart';
+import 'package:mobile_ssas_rrhh/features/auth/storage/token_storage.dart';
+import 'package:mobile_ssas_rrhh/shared/api/http_client.dart';
+import 'package:mobile_ssas_rrhh/features/asistencia/data/asistencia_service.dart';
+import 'package:mobile_ssas_rrhh/features/asistencia/data/ubicacion_service.dart';
+import 'package:mobile_ssas_rrhh/features/asistencia/ui/asistencia_page.dart';
+import 'package:mobile_ssas_rrhh/features/boletas/data/boletas_service.dart';
+import 'package:mobile_ssas_rrhh/features/boletas/ui/boletas_page.dart';
+import 'package:mobile_ssas_rrhh/features/legajo/data/legajo_service.dart';
+import 'package:mobile_ssas_rrhh/features/legajo/ui/legajo_page.dart';
+import 'package:mobile_ssas_rrhh/features/mi_contrato/data/mi_contrato_service.dart';
+import 'package:mobile_ssas_rrhh/features/mi_contrato/ui/mi_contrato_page.dart';
+import 'package:mobile_ssas_rrhh/features/mis_dias/data/mis_dias_service.dart';
+import 'package:mobile_ssas_rrhh/features/mis_dias/ui/mis_dias_page.dart';
+import 'package:mobile_ssas_rrhh/features/solicitudes/data/solicitudes_service.dart';
+import 'package:mobile_ssas_rrhh/features/solicitudes/ui/solicitar_ausencia_page.dart';
+import 'package:mobile_ssas_rrhh/features/tipos_ausencia/data/tipos_ausencia_service.dart';
+import 'package:mobile_ssas_rrhh/features/tipos_ausencia/ui/tipos_ausencia_page.dart';
 
 class StaffPortalPage extends StatefulWidget {
   const StaffPortalPage({super.key, this.restoreSession = true});
@@ -63,6 +80,15 @@ class _StaffPortalPageState extends State<StaffPortalPage> {
 
   Set<String> get _permisos =>
       (_perfil?['permissions'] as List? ?? const []).cast<String>().toSet();
+
+  final _tokenPersonal = const SecureTokenStorage();
+  late final _clientePersonal = AppHttpClient(baseUrl: AppConstants.apiBaseUrl);
+
+  bool _permiso(String codigo) =>
+      _permisos.contains(codigo) || _permisos.contains('platform:$codigo');
+
+  void _abrirPersonal(Widget page) =>
+      Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
 
   bool get _puedeVerReportes =>
       _permisos.contains('reportes:ver') ||
@@ -207,6 +233,7 @@ class _StaffPortalPageState extends State<StaffPortalPage> {
   @override
   void dispose() {
     _api.close();
+    _clientePersonal.close();
     _empresa.dispose();
     _usuario.dispose();
     _clave.dispose();
@@ -217,7 +244,9 @@ class _StaffPortalPageState extends State<StaffPortalPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: Text(_perfil == null ? 'Acceso de personal' : 'Selección'),
+      title: Text(
+        _perfil == null ? 'Acceso de personal' : 'Portal de personal',
+      ),
       actions: [
         if (_perfil != null && !_esPlataforma)
           IconButton(
@@ -308,11 +337,8 @@ class _StaffPortalPageState extends State<StaffPortalPage> {
         const SizedBox(height: 16),
         if (_error != null)
           Text(_error!, style: const TextStyle(color: Colors.red)),
-        if (!_puedeVer &&
-            !_puedeVerReportes &&
-            !_puedeVerRespaldos &&
-            !_puedeVerSuscripcion)
-          const Text('Tu cuenta no tiene permiso para ver postulaciones.'),
+        if (_permisos.isEmpty)
+          const Text('Tu cuenta no tiene funciones asignadas.'),
         if (_puedeVerSuscripcion)
           ListTile(
             leading: const Icon(Icons.credit_card_outlined),
@@ -336,6 +362,77 @@ class _StaffPortalPageState extends State<StaffPortalPage> {
                   api: _api,
                   canCreate: _permisos.contains('backup:crear'),
                 ),
+              ),
+            ),
+          ),
+        if (!_esPlataforma && _permiso('asistencia:marcar'))
+          ListTile(
+            leading: const Icon(Icons.location_on_outlined),
+            title: const Text('Marcar asistencia'),
+            onTap: () => _abrirPersonal(
+              AsistenciaPage(
+                service: AsistenciaService(_clientePersonal, _tokenPersonal),
+                ubicacion: const UbicacionService(),
+              ),
+            ),
+          ),
+        if (!_esPlataforma && _permiso('asistencia:mi'))
+          ListTile(
+            leading: const Icon(Icons.calendar_month_outlined),
+            title: const Text('Mis días trabajados'),
+            onTap: () => _abrirPersonal(
+              MisDiasPage(
+                service: MisDiasService(_clientePersonal, _tokenPersonal),
+              ),
+            ),
+          ),
+        if (!_esPlataforma && _permiso('boletas:mi'))
+          ListTile(
+            leading: const Icon(Icons.receipt_long_outlined),
+            title: const Text('Mis boletas'),
+            onTap: () => _abrirPersonal(
+              BoletasPage(
+                service: BoletasService(_clientePersonal, _tokenPersonal),
+              ),
+            ),
+          ),
+        if (!_esPlataforma && _permiso('personal:mi')) ...[
+          ListTile(
+            leading: const Icon(Icons.folder_outlined),
+            title: const Text('Mi legajo'),
+            onTap: () => _abrirPersonal(
+              LegajoPage(
+                service: LegajoService(_clientePersonal, _tokenPersonal),
+              ),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.description_outlined),
+            title: const Text('Mi contrato'),
+            onTap: () => _abrirPersonal(
+              MiContratoPage(
+                service: MiContratoService(_clientePersonal, _tokenPersonal),
+              ),
+            ),
+          ),
+        ],
+        if (!_esPlataforma && _permiso('ausencias:solicitar'))
+          ListTile(
+            leading: const Icon(Icons.event_note_outlined),
+            title: const Text('Solicitar ausencia'),
+            onTap: () => _abrirPersonal(
+              SolicitarAusenciaPage(
+                service: SolicitudesService(_clientePersonal, _tokenPersonal),
+              ),
+            ),
+          ),
+        if (!_esPlataforma && _permiso('ausencias:gestionar'))
+          ListTile(
+            leading: const Icon(Icons.tune_outlined),
+            title: const Text('Tipos de ausencia'),
+            onTap: () => _abrirPersonal(
+              TiposAusenciaPage(
+                service: TiposAusenciaService(_clientePersonal, _tokenPersonal),
               ),
             ),
           ),

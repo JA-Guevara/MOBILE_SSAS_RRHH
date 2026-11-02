@@ -83,7 +83,7 @@ class BoletaPago {
       salarioBasico: (cuerpo['salario_basico'] as num?)?.toDouble(),
       totalGanado: (cuerpo['total_ganado'] as num?)?.toDouble(),
       totalDescuentos: (cuerpo['total_descuentos'] as num?)?.toDouble(),
-      liquidoPagable: (cuerpo['liquido_pagable'] as num?)?.toDouble(),
+      liquidoPagable: double.tryParse('${cuerpo['liquido_pagable']}'),
       totalAportesPatronales: (cuerpo['total_aportes_patronales'] as num?)
           ?.toDouble(),
       estado: cuerpo['estado'] as String?,
