@@ -108,8 +108,13 @@ class SolicitudesService {
 /// Es función suelta y no método porque la usan dos pantallas: solicitar
 /// permiso (T3-19) y mis días trabajados (T3-21).
 Future<SaldoVacacion?> leerSaldoMio(AppHttpClient client, String? token) async {
-  // El backend aún no expone un saldo propio de solo lectura.
-  return null;
+  final respuesta = await client.get(
+    '/personal/mi/vacaciones',
+    accessToken: token,
+  );
+  final saldos = filasDe(respuesta).map(SaldoVacacion.fromJson).toList()
+    ..sort((a, b) => (a.gestion ?? 0).compareTo(b.gestion ?? 0));
+  return saldos.isEmpty ? null : saldos.last;
 }
 
 /// Traduce el fallo al cargar a algo que el colaborador entienda, igual que

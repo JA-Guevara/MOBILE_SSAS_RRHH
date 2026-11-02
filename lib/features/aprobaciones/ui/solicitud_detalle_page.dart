@@ -88,6 +88,12 @@ class _SolicitudDetallePageState extends State<SolicitudDetallePage> {
     if (observacion == null) return;
     if (!mounted) return;
 
+    int? diasHabilesVacacion;
+    if (accion == AccionRespuesta.aprobar && solicitud.afectaVacaciones) {
+      diasHabilesVacacion = await _pedirDiasHabiles(solicitud);
+      if (diasHabilesVacacion == null || !mounted) return;
+    }
+
     setState(() {
       _respondiendo = true;
       _aviso = null;
@@ -95,7 +101,11 @@ class _SolicitudDetallePageState extends State<SolicitudDetallePage> {
 
     try {
       final actualizada = accion == AccionRespuesta.aprobar
-          ? await widget.service.aprobar(solicitud.id, observacion: observacion)
+          ? await widget.service.aprobar(
+              solicitud.id,
+              observacion: observacion,
+              diasHabilesVacacion: diasHabilesVacacion,
+            )
           : await widget.service.rechazar(
               solicitud.id,
               observacion: observacion,
@@ -120,6 +130,55 @@ class _SolicitudDetallePageState extends State<SolicitudDetallePage> {
       // Si otro jefe respondió antes (409), el estado que tenemos ya no
       // vale: se recarga para que los botones desaparezcan.
       await _cargar();
+    }
+  }
+
+  Future<int?> _pedirDiasHabiles(SolicitudAusencia solicitud) async {
+    final form = GlobalKey<FormState>();
+    final controller = TextEditingController();
+    try {
+      return await showDialog<int>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Días hábiles de vacación'),
+          content: Form(
+            key: form,
+            child: TextFormField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Días hábiles verificados',
+                helperText: 'Confirma el número con el calendario laboral.',
+              ),
+              validator: (value) {
+                final days = int.tryParse(value?.trim() ?? '');
+                if (days == null ||
+                    days < 1 ||
+                    days > (solicitud.diasSolicitados ?? 0)) {
+                  return 'Indica un valor válido dentro del período.';
+                }
+                return null;
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () {
+                if (form.currentState!.validate()) {
+                  Navigator.pop(context, int.parse(controller.text.trim()));
+                }
+              },
+              child: const Text('Confirmar'),
+            ),
+          ],
+        ),
+      );
+    } finally {
+      controller.dispose();
     }
   }
 

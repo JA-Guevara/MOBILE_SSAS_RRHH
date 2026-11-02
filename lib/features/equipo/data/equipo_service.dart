@@ -33,32 +33,25 @@ class EquipoService {
   Future<List<MiembroEquipo>> miEquipo() async {
     final token = await _tokenStorage.readAccessToken();
 
-    final r = await Future.wait([
-      // >>> VERIFICA estas dos rutas en /docs. <<<  Todavía no existen.
-      _client.get('/contratos/mi-equipo', accessToken: token),
-      _client.get('/asistencias?fecha=${_fecha(hoy())}', accessToken: token),
-      // Estas dos YA EXISTEN en rrhh-api (limit máximo 100).
-      _client.get('/empleados?limit=100', accessToken: token),
-      _client.get('/cargos', accessToken: token),
-    ]);
-
-    final asistencias = <String, Asistencia>{
-      for (final a in filasDe(r[1]).map(Asistencia.fromJson))
-        if (a.empleadoId != null) a.empleadoId!: a,
-    };
-    final empleados = porId(filasDe(r[2]), EmpleadoRef.fromJson, (e) => e.id);
-    final cargos = porId(filasDe(r[3]), CargoRef.fromJson, (c) => c.id);
-
-    final lista = filasDe(r[0])
-        .map(Contrato.fromJson)
-        // Contratos versionados: solo cuenta el vigente.
-        .where((c) => c.esVigente)
+    final respuesta = await _client.get(
+      '/personal/mi/equipo/resumen',
+      accessToken: token,
+    );
+    final lista = filasDe(respuesta)
         .map(
-          (c) => MiembroEquipo(
-            contrato: c,
-            empleado: empleados[c.empleadoId],
-            cargo: cargos[c.cargoId],
-            asistencia: asistencias[c.empleadoId],
+          (fila) => MiembroEquipo(
+            contrato: Contrato.fromJson(
+              fila['contrato'] as Map<String, dynamic>,
+            ),
+            empleado: EmpleadoRef.fromJson(
+              fila['empleado'] as Map<String, dynamic>,
+            ),
+            cargo: CargoRef.fromJson(fila['cargo'] as Map<String, dynamic>),
+            asistencia: fila['asistencia'] is Map<String, dynamic>
+                ? Asistencia.fromJson(
+                    fila['asistencia'] as Map<String, dynamic>,
+                  )
+                : null,
           ),
         )
         .toList();
@@ -70,9 +63,6 @@ class EquipoService {
   }
 
   /// "2026-10-24", como una columna DATE.
-  static String _fecha(DateTime d) =>
-      '${d.year}-${d.month.toString().padLeft(2, '0')}-'
-      '${d.day.toString().padLeft(2, '0')}';
 }
 
 /// Traduce el fallo a algo que el jefe entienda, igual que en T2-20. Aquí

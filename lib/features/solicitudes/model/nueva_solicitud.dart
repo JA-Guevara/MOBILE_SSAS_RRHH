@@ -82,9 +82,11 @@ class NuevaSolicitud {
 
     if (tipo.descuentaVacacion) {
       final disponibles = saldo?.diasSaldo;
-      if (disponibles != null && dias > disponibles) {
-        return 'Saldo insuficiente: pides ${_dias(dias)} y tienes '
-            '${SaldoVacacion.dias(disponibles)} disponibles.';
+      if (disponibles == null) {
+        return 'No tienes saldo de vacaciones asignado. Consulta con Recursos Humanos.';
+      }
+      if (disponibles <= 0) {
+        return 'No tienes días de vacación disponibles. Consulta con Recursos Humanos.';
       }
     }
 
@@ -102,8 +104,6 @@ class NuevaSolicitud {
   /// "02/11/2026": lo que se muestra en el formulario.
   static String fechaCorta(DateTime f) =>
       '${_dos(f.day)}/${_dos(f.month)}/${f.year}';
-
-  static String _dias(int n) => n == 1 ? '1 día' : '$n días';
 
   static String _dos(int n) => n.toString().padLeft(2, '0');
 }

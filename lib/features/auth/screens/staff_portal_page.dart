@@ -9,6 +9,10 @@ import 'package:mobile_ssas_rrhh/features/reportes/reportes_page.dart';
 import 'package:mobile_ssas_rrhh/features/auth/storage/token_storage.dart';
 import 'package:mobile_ssas_rrhh/shared/api/http_client.dart';
 import 'package:mobile_ssas_rrhh/features/asistencia/data/asistencia_service.dart';
+import 'package:mobile_ssas_rrhh/features/aprobaciones/data/aprobaciones_service.dart';
+import 'package:mobile_ssas_rrhh/features/aprobaciones/ui/bandeja_page.dart';
+import 'package:mobile_ssas_rrhh/features/equipo/data/equipo_service.dart';
+import 'package:mobile_ssas_rrhh/features/equipo/ui/equipo_page.dart';
 import 'package:mobile_ssas_rrhh/features/asistencia/data/ubicacion_service.dart';
 import 'package:mobile_ssas_rrhh/features/asistencia/ui/asistencia_page.dart';
 import 'package:mobile_ssas_rrhh/features/boletas/data/boletas_service.dart';
@@ -433,6 +437,26 @@ class _StaffPortalPageState extends State<StaffPortalPage> {
             onTap: () => _abrirPersonal(
               TiposAusenciaPage(
                 service: TiposAusenciaService(_clientePersonal, _tokenPersonal),
+              ),
+            ),
+          ),
+        if (!_esPlataforma && _permiso('ausencias:aprobar'))
+          ListTile(
+            leading: const Icon(Icons.fact_check_outlined),
+            title: const Text('Aprobar ausencias'),
+            onTap: () => _abrirPersonal(
+              BandejaPage(
+                service: AprobacionesService(_clientePersonal, _tokenPersonal),
+              ),
+            ),
+          ),
+        if (!_esPlataforma && _permiso('asistencia:ver_equipo'))
+          ListTile(
+            leading: const Icon(Icons.groups_outlined),
+            title: const Text('Mi equipo'),
+            onTap: () => _abrirPersonal(
+              EquipoPage(
+                service: EquipoService(_clientePersonal, _tokenPersonal),
               ),
             ),
           ),

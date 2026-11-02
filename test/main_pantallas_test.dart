@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:mobile_ssas_rrhh/main.dart';
+import 'package:mobile_ssas_rrhh/demo_main.dart';
 
 /// Comprueba que el arranque de la app de capturas funciona con CADA valor
 /// del enum Pantalla.

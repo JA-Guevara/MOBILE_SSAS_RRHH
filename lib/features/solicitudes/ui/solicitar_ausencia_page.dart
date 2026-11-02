@@ -572,8 +572,8 @@ class _SinSaldo extends StatelessWidget {
   Widget build(BuildContext context) {
     return const _Aviso(
       texto:
-          'El saldo de vacaciones no está disponible aquí. Puedes enviar la '
-          'solicitud; el servidor verificará la disponibilidad.',
+          'Todavía no tienes saldo de vacaciones asignado. Puedes pedir '
+          'los demás tipos de ausencia.',
       icono: Icons.info_outline,
       fondo: AppColors.ambar100,
       color: AppColors.ambar700,

@@ -93,9 +93,15 @@ class SolicitudAusencia {
       documentoUrl: _texto(cuerpo['documento_url']),
       estado: parseEstado(crudo),
       estadoCrudo: crudo,
-      observacionAprobador: _texto(cuerpo['observacion_aprobador']),
-      fechaSolicitud: _parseFecha(cuerpo['fecha_solicitud']),
-      fechaRespuesta: _parseFecha(cuerpo['fecha_respuesta']),
+      observacionAprobador: _texto(
+        cuerpo['observacion_jefe'] ?? cuerpo['observacion_aprobador'],
+      ),
+      fechaSolicitud: _parseFecha(
+        cuerpo['creado_en'] ?? cuerpo['fecha_solicitud'],
+      ),
+      fechaRespuesta: _parseFecha(
+        cuerpo['resuelto_en'] ?? cuerpo['fecha_respuesta'],
+      ),
     );
   }
 
