@@ -63,6 +63,10 @@ class StaffApi {
   Future<Map<String, dynamic>> profile() async =>
       await _authorized('GET', '/auth/me') as Map<String, dynamic>;
 
+  Future<List<Map<String, dynamic>>> notifications() async =>
+      (await _authorized('GET', '/notificaciones/mi') as List)
+          .cast<Map<String, dynamic>>();
+
   Future<List<String>> chatbotSuggestions() async =>
       (await _authorized('GET', '/chatbot/sugerencias') as List).cast<String>();
 

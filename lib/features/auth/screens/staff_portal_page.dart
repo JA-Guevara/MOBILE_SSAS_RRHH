@@ -1,4 +1,8 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mobile_ssas_rrhh/app/chatbot_page.dart';
 import 'package:mobile_ssas_rrhh/core/constants/app_constants.dart';
 import 'package:mobile_ssas_rrhh/features/auth/services/staff_api.dart';
@@ -37,7 +41,8 @@ class StaffPortalPage extends StatefulWidget {
   State<StaffPortalPage> createState() => _StaffPortalPageState();
 }
 
-class _StaffPortalPageState extends State<StaffPortalPage> {
+class _StaffPortalPageState extends State<StaffPortalPage>
+    with WidgetsBindingObserver {
   final _api = StaffApi(baseUrl: AppConstants.apiBaseUrl);
   final _empresa = TextEditingController(text: AppConstants.empresaSlug);
   final _usuario = TextEditingController();
@@ -48,10 +53,16 @@ class _StaffPortalPageState extends State<StaffPortalPage> {
   bool _plataforma = false;
   bool _ocupado = true;
   String? _error;
+  final _notificationStorage = const FlutterSecureStorage();
+  List<Map<String, dynamic>> _notifications = [];
+  Set<String> _readNotificationIds = {};
+  Timer? _notificationTimer;
+  bool _loadingNotifications = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     if (widget.restoreSession) {
       _restaurar();
     } else {
@@ -64,6 +75,7 @@ class _StaffPortalPageState extends State<StaffPortalPage> {
       final perfil = await _api.profile();
       if (!mounted) return;
       setState(() => _perfil = perfil);
+      unawaited(_loadNotifications());
       await _cargarVacantes();
     } on StaffApiException catch (error) {
       if (!mounted) return;
@@ -103,6 +115,109 @@ class _StaffPortalPageState extends State<StaffPortalPage> {
 
   bool get _puedeVerSuscripcion =>
       !_esPlataforma && _permisos.contains('suscripcion:ver');
+
+  String? get _notificationStorageKey {
+    final userId = _perfil?['id']?.toString();
+    final companyId = _perfil?['empresa_id']?.toString();
+    if (userId == null || companyId == null) return null;
+    return 'read_notifications:$companyId:$userId';
+  }
+
+  int get _unreadNotificationCount => _notifications
+      .where((item) => !_readNotificationIds.contains('${item['id']}'))
+      .length;
+
+  Future<void> _loadNotifications() async {
+    final key = _notificationStorageKey;
+    if (key == null || _loadingNotifications) return;
+    _loadingNotifications = true;
+    try {
+      final raw = await _notificationStorage.read(key: key);
+      final read = raw == null
+          ? <String>{}
+          : (jsonDecode(raw) as List).map((id) => '$id').toSet();
+      final items = await _api.notifications();
+      if (!mounted || key != _notificationStorageKey) return;
+      setState(() {
+        _notifications = items;
+        _readNotificationIds = read;
+      });
+      _notificationTimer ??= Timer.periodic(
+        const Duration(seconds: 60),
+        (_) => _loadNotifications(),
+      );
+    } on Exception {
+      // Un fallo de avisos no bloquea las funciones de personal.
+    } finally {
+      _loadingNotifications = false;
+    }
+  }
+
+  Future<void> _showNotifications() async {
+    await _loadNotifications();
+    if (!mounted) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: SizedBox(
+          height: MediaQuery.sizeOf(context).height * 0.7,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  'Notificaciones',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
+              Expanded(
+                child: _notifications.isEmpty
+                    ? const Center(child: Text('No tienes avisos recientes.'))
+                    : ListView.builder(
+                        itemCount: _notifications.length,
+                        itemBuilder: (context, index) {
+                          final item = _notifications[index];
+                          final date = DateTime.tryParse('${item['fecha']}')
+                              ?.toLocal();
+                          return ListTile(
+                            leading: Icon(
+                              item['tipo'] == 'SUSCRIPCION'
+                                  ? Icons.credit_card_outlined
+                                  : Icons.event_available_outlined,
+                            ),
+                            title: Text('${item['titulo']}'),
+                            subtitle: Text('${item['mensaje']}'),
+                            trailing: date == null
+                                ? null
+                                : Text('${date.day}/${date.month}'),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    final key = _notificationStorageKey;
+    if (key == null || !mounted) return;
+    final read = {
+      ..._readNotificationIds,
+      for (final item in _notifications) '${item['id']}',
+    };
+    setState(() => _readNotificationIds = read);
+    await _notificationStorage.write(
+      key: key,
+      value: jsonEncode(read.toList()),
+    );
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _loadNotifications();
+  }
 
   void _abrirReportes() {
     final empresaId = _empresaId.text.trim();
@@ -179,6 +294,7 @@ class _StaffPortalPageState extends State<StaffPortalPage> {
       _clave.clear();
       if (!mounted) return;
       setState(() => _perfil = perfil);
+      unawaited(_loadNotifications());
       await _cargarVacantes();
     } on StaffApiException catch (error) {
       if (mounted) {
@@ -226,6 +342,8 @@ class _StaffPortalPageState extends State<StaffPortalPage> {
       if (mounted) {
         setState(() {
           _perfil = null;
+          _notifications = [];
+          _readNotificationIds = {};
           _vacantes = null;
           _ocupado = false;
           _error = null;
@@ -236,6 +354,8 @@ class _StaffPortalPageState extends State<StaffPortalPage> {
 
   @override
   void dispose() {
+    _notificationTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     _api.close();
     _clientePersonal.close();
     _empresa.dispose();
@@ -252,6 +372,16 @@ class _StaffPortalPageState extends State<StaffPortalPage> {
         _perfil == null ? 'Acceso de personal' : 'Portal de personal',
       ),
       actions: [
+        if (_perfil != null && !_esPlataforma)
+          IconButton(
+            tooltip: 'Notificaciones',
+            onPressed: _showNotifications,
+            icon: Badge(
+              isLabelVisible: _unreadNotificationCount > 0,
+              label: Text('$_unreadNotificationCount'),
+              child: const Icon(Icons.notifications_outlined),
+            ),
+          ),
         if (_perfil != null && !_esPlataforma)
           IconButton(
             tooltip: 'Asistente RRHH',
