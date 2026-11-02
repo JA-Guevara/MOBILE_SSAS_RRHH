@@ -1,6 +1,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <!-- T3-18: la marcación de asistencia captura latitud y longitud.
+         FINE es el GPS preciso; COARSE deja que el sistema resuelva por red
+         si el usuario concede solo la ubicación aproximada. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <application
         android:label="mobile_ssas_rrhh"
         android:name="${applicationName}"
