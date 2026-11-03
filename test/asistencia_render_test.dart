@@ -3,11 +3,25 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:mobile_ssas_rrhh/features/asistencia/data/asistencia_service_falso.dart';
 import 'package:mobile_ssas_rrhh/features/asistencia/data/ubicacion_service_falso.dart';
+import 'package:mobile_ssas_rrhh/core/errors/app_exception.dart';
 import 'package:mobile_ssas_rrhh/features/asistencia/model/asistencia.dart';
 import 'package:mobile_ssas_rrhh/features/asistencia/ui/asistencia_page.dart';
 import 'package:mobile_ssas_rrhh/shared/theme/app_theme.dart';
 
 Widget _app(Widget hijo) => MaterialApp(theme: AppTheme.light, home: hijo);
+
+class _SinContrato extends AsistenciaServiceSinMarcar {
+  @override
+  Future<Asistencia> marcarEntrada({
+    required double latitud,
+    required double longitud,
+  }) async {
+    throw const AppException(
+      'No hay contrato vigente para este dia',
+      statusCode: 409,
+    );
+  }
+}
 
 void main() {
   test('el modelo saca HH:MM de los formatos que puede mandar el backend', () {
@@ -16,6 +30,10 @@ void main() {
 
     const isoCompleto = Asistencia(id: '1', horaEntrada: '2026-08-29T08:03:00');
     expect(isoCompleto.entradaCorta, '08:03');
+
+    const utc = Asistencia(id: '1', horaEntrada: '2026-11-02T23:13:00Z');
+    final local = DateTime.utc(2026, 11, 2, 23, 13).toLocal();
+    expect(utc.entradaCorta, '${local.hour.toString().padLeft(2, '0')}:13');
 
     const yaCorto = Asistencia(id: '1', horaEntrada: '08:03');
     expect(yaCorto.entradaCorta, '08:03');
@@ -88,6 +106,26 @@ void main() {
       find.textContaining('Entrada registrada a las 08:03'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('muestra el rechazo del servidor aunque recargue el día', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _app(
+        AsistenciaPage(
+          service: _SinContrato(),
+          ubicacion: const UbicacionServiceFalso(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Marcar\nentrada'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('No hay contrato vigente para este dia'), findsOneWidget);
+    expect(find.text('Marcar\nentrada'), findsOneWidget);
   });
 
   testWidgets('día completo: el botón queda deshabilitado', (tester) async {

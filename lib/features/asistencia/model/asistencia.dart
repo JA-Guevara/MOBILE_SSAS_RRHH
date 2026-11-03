@@ -122,11 +122,21 @@ class Asistencia {
   /// Texto que se muestra cuando no hay hora.
   static const sinHora = '—:—';
 
-  /// Saca "HH:MM" de "08:03:00", de "2026-08-29T08:03:00" o de "08:03".
+  /// Convierte al horario del teléfono los instantes ISO con zona horaria.
+  /// Los valores sin zona (TIME o fecha local) se muestran tal como llegan.
   /// Si no reconoce el formato devuelve el valor tal cual, para no ocultar
   /// lo que mandó el backend.
   static String _soloHoraMinuto(String? valor) {
     if (valor == null) return sinHora;
+
+    if (valor.contains('T') &&
+        RegExp(r'(Z|[+-]\d{2}:?\d{2})$').hasMatch(valor)) {
+      final instante = DateTime.tryParse(valor);
+      if (instante != null) {
+        final local = instante.toLocal();
+        return '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
+      }
+    }
 
     final conT = valor.contains('T') ? valor.split('T').last : valor;
     final partes = conT.split(':');

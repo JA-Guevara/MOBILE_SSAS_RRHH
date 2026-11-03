@@ -95,41 +95,46 @@ void main() {
       );
     });
 
-    test('une contrato, empleado, cargo y asistencia por sus llaves', () async {
+    test('lee el resumen del equipo ya asociado por el backend', () async {
       final peticiones = <http.Request>[];
       final cliente = MockClient((req) async {
         peticiones.add(req);
         final cuerpo = switch (req.url.path) {
-          '/api/v1/contratos/mi-equipo' => [
+          '/api/v1/personal/mi/equipo/resumen' => [
             {
-              'id': 'c2',
-              'empleado_id': 'u2',
-              'cargo_id': 'g1',
-              'estado': 'VIGENTE',
+              'contrato': {
+                'id': 'c2',
+                'empleado_id': 'u2',
+                'cargo_id': 'g1',
+                'estado': 'VIGENTE',
+              },
+              'empleado': {
+                'id': 'u2',
+                'nombres': 'Zoe',
+                'apellido_paterno': 'Paz',
+              },
+              'cargo': {'id': 'g1', 'nombre': 'Contadora'},
+              'asistencia': null,
             },
             {
-              'id': 'c1',
-              'empleado_id': 'u1',
-              'cargo_id': 'g1',
-              'estado': 'VIGENTE',
+              'contrato': {
+                'id': 'c1',
+                'empleado_id': 'u1',
+                'cargo_id': 'g1',
+                'estado': 'VIGENTE',
+              },
+              'empleado': {
+                'id': 'u1',
+                'nombres': 'Ana',
+                'apellido_paterno': 'Ríos',
+              },
+              'cargo': {'id': 'g1', 'nombre': 'Contadora'},
+              'asistencia': {
+                'id': 'a1',
+                'empleado_id': 'u1',
+                'hora_entrada': '08:00:00',
+              },
             },
-            // Contrato cerrado: no debe aparecer.
-            {
-              'id': 'c0',
-              'empleado_id': 'u1',
-              'cargo_id': 'g9',
-              'estado': 'FINALIZADO',
-            },
-          ],
-          '/api/v1/asistencias' => [
-            {'id': 'a1', 'empleado_id': 'u1', 'hora_entrada': '08:00:00'},
-          ],
-          '/api/v1/empleados' => [
-            {'id': 'u1', 'nombres': 'Ana', 'apellido_paterno': 'Ríos'},
-            {'id': 'u2', 'nombres': 'Zoe', 'apellido_paterno': 'Paz'},
-          ],
-          '/api/v1/cargos' => [
-            {'id': 'g1', 'nombre': 'Contadora'},
           ],
           _ => throw StateError('ruta inesperada ${req.url}'),
         };
@@ -151,10 +156,7 @@ void main() {
         ),
         isTrue,
       );
-      final asistencia = peticiones.firstWhere(
-        (r) => r.url.path == '/api/v1/asistencias',
-      );
-      expect(asistencia.url.queryParameters['fecha'], '2026-10-24');
+      expect(peticiones.single.url.path, '/api/v1/personal/mi/equipo/resumen');
 
       expect(equipo.map((m) => m.nombreCompleto), ['Ana Ríos', 'Zoe Paz']);
       expect(equipo.map((m) => m.cargoNombre), ['Contadora', 'Contadora']);

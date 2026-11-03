@@ -25,6 +25,23 @@ class EquipoServiceFalso extends EquipoService {
   EquipoServiceFalso() : super(clienteFalso(_responder), sesionFalsa());
 
   static Object? _responder(PeticionFalsa p) {
+    if (p.es('GET', '/personal/mi/equipo/resumen')) {
+      return contratos
+          .where((c) => c['estado'] == 'VIGENTE')
+          .map(
+            (c) => {
+              'contrato': c,
+              'empleado': empleados.firstWhere(
+                (e) => e['id'] == c['empleado_id'],
+              ),
+              'cargo': cargos.firstWhere((g) => g['id'] == c['cargo_id']),
+              'asistencia': asistencias
+                  .where((a) => a['empleado_id'] == c['empleado_id'])
+                  .firstOrNull,
+            },
+          )
+          .toList();
+    }
     if (p.es('GET', '/contratos/mi-equipo')) return contratos;
     if (p.es('GET', '/asistencias')) return asistencias;
     if (p.es('GET', '/empleados')) return empleados;

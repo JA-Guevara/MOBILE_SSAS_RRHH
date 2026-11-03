@@ -36,9 +36,22 @@ class _BandejaFalsa {
   };
 
   Object? responder(PeticionFalsa p) {
-    if (p.es('GET', '/solicitudes-ausencia/pendientes')) {
+    if (p.es('GET', '/personal/mi/equipo/ausencias/resumen')) {
       return _solicitudes.values
-          .where((s) => s['estado'] == 'PENDIENTE')
+          .map(
+            (s) => {
+              ...s,
+              'empleado': _empleados.firstWhere(
+                (e) => e['id'] == s['empleado_id'],
+              ),
+              'tipo': _tipos.firstWhere(
+                (t) => t['id'] == s['tipo_ausencia_id'],
+              ),
+              'saldo': _saldos
+                  .where((v) => v['empleado_id'] == s['empleado_id'])
+                  .lastOrNull,
+            },
+          )
           .toList();
     }
     if (p.es('GET', '/tipos-ausencia')) return _tipos;
@@ -52,11 +65,12 @@ class _BandejaFalsa {
 
     for (final id in _solicitudes.keys) {
       if (p.es('GET', '/solicitudes-ausencia/$id')) return _solicitudes[id];
-      if (p.es('POST', '/solicitudes-ausencia/$id/aprobar')) {
-        return _responder(id, 'APROBADA', p.cuerpo);
-      }
-      if (p.es('POST', '/solicitudes-ausencia/$id/rechazar')) {
-        return _responder(id, 'RECHAZADA', p.cuerpo);
+      if (p.es('POST', '/personal/ausencias/$id/decision')) {
+        return _responder(
+          id,
+          p.cuerpo?['aprobar'] == true ? 'APROBADA' : 'RECHAZADA',
+          p.cuerpo,
+        );
       }
     }
 
@@ -82,7 +96,7 @@ class _BandejaFalsa {
       ...fila,
       'estado': nuevoEstado,
       'aprobador_id': 'e1',
-      'observacion_aprobador': cuerpo?['observacion_aprobador'],
+      'observacion_aprobador': cuerpo?['observacion'],
       'fecha_respuesta': '2026-08-29T10:15:00',
     };
   }
@@ -253,7 +267,7 @@ class AprobacionesServiceVacio extends AprobacionesService {
     : super(
         clienteFalso(
           (p) => switch (p.ruta) {
-            '/solicitudes-ausencia/pendientes' ||
+            '/personal/mi/equipo/ausencias/resumen' ||
             '/tipos-ausencia' ||
             '/empleados' ||
             '/saldos-vacacion' => const <Object>[],

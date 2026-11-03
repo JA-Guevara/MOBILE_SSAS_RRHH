@@ -140,9 +140,11 @@ AppHttpClient _backendBoleta(_Boleta b) => AppHttpClient(
   client: MockClient((req) async {
     final id = b.fila['id'];
     final cuerpo = switch (req.url.path) {
-      '/api/v1/periodos-nomina' => [b.periodo],
-      final r when r == '/api/v1/boletas/$id' => b.fila,
-      final r when r == '/api/v1/boletas/$id/detalles' => b.detalles,
+      '/api/v1/nomina/periodos' => [b.periodo],
+      final r when r == '/api/v1/nomina/mi/boletas/$id' => {
+        ...b.fila,
+        'detalle': b.detalles,
+      },
       _ => throw StateError('ruta inesperada ${req.url}'),
     };
     return http.Response.bytes(utf8.encode(jsonEncode(cuerpo)), 200);
@@ -242,14 +244,10 @@ void main() {
 
       await servicio.marcarEntrada(latitud: -17.7833, longitud: -63.1821);
 
-      final req = peticiones.single;
-      expect(req.url.path, '/api/v1/asistencias/entrada');
+      final req = peticiones.firstWhere((r) => r.method == 'POST');
+      expect(req.url.path, '/api/v1/personal/mi/asistencia/entrada');
       expect(req.headers['authorization'], 'Bearer token-colaborador');
-      expect(jsonDecode(req.body), {
-        'latitud_entrada': -17.7833,
-        'longitud_entrada': -63.1821,
-        'origen': 'APP_MOVIL',
-      });
+      expect(jsonDecode(req.body), {'latitud': -17.7833, 'longitud': -63.1821});
     });
 
     test(

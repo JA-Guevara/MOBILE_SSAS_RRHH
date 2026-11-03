@@ -26,7 +26,7 @@ class LegajoServiceFalso extends LegajoService {
   LegajoServiceFalso()
     : super(
         clienteFalso(
-          (p) => p.es('GET', '/documentos-empleado/mios')
+          (p) => p.es('GET', '/personal/mi/documentos')
               ? datos(DateTime.now())
               : throw ErrorFalso.rutaDesconocida(p),
         ),

@@ -47,8 +47,8 @@ class MisDiasServiceVacio extends MisDiasService {
     : super(
         clienteFalso(
           (p) => switch (p.ruta) {
-            '/asistencias/mias' => const <Object>[],
-            '/saldos-vacacion/mio' => _saldo,
+            '/personal/mi/asistencia' => const <Object>[],
+            '/personal/mi/vacaciones' => [_saldo],
             _ => throw ErrorFalso.rutaDesconocida(p),
           },
           demora: const Duration(milliseconds: 500),
@@ -92,10 +92,20 @@ class _BackendMisDias {
   _BackendMisDias(this.reloj, {this.conSaldo = true});
 
   Object? responder(PeticionFalsa p) {
-    if (p.es('GET', '/asistencias/mias')) return _marcasDelMes(p.query['mes']);
-    if (p.es('GET', '/saldos-vacacion/mio')) {
-      if (!conSaldo) throw const ErrorFalso(404, 'Sin saldo de vacaciones.');
-      return _saldo;
+    if (p.es('GET', '/personal/mi/asistencia')) {
+      final ahora = reloj();
+      final anterior = DateTime(ahora.year, ahora.month - 1);
+      return [
+        ..._marcasDelMes(
+          '${ahora.year}-${ahora.month.toString().padLeft(2, '0')}',
+        ),
+        ..._marcasDelMes(
+          '${anterior.year}-${anterior.month.toString().padLeft(2, '0')}',
+        ),
+      ];
+    }
+    if (p.es('GET', '/personal/mi/vacaciones')) {
+      return conSaldo ? [_saldo] : const <Object>[];
     }
     throw ErrorFalso.rutaDesconocida(p);
   }

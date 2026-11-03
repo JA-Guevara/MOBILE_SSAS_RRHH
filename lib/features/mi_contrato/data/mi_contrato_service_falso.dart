@@ -100,7 +100,7 @@ class MiContratoServiceSinSesion extends MiContratoService {
 
 Object? Function(PeticionFalsa) _responder(List<Map<String, Object?>> filas) =>
     (p) => switch (p.ruta) {
-      '/contratos/mios' => filas,
+      '/personal/mi/contratos' => filas,
       '/cargos' => _cargos,
       _ => throw ErrorFalso.rutaDesconocida(p),
     };

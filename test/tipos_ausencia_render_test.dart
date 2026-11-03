@@ -62,15 +62,13 @@ void main() {
     expect(ReglasTipoAusencia.textoTope(1), 'Hasta 1 día al año');
     expect(ReglasTipoAusencia.textoTope(15), 'Hasta 15 días al año');
 
-    // El cuerpo que se guarda: las ocho columnas, sin id ni empresa_id.
+    // El código es identificador fijo: el backend solo permite editar estos campos.
     const tipo = TipoAusencia(id: 't1', empresaId: 'emp1', nombre: 'Vacación');
     expect(tipo.toJson().keys.toSet(), {
       'nombre',
-      'codigo',
       'es_remunerado',
       'descuenta_vacacion',
       'dias_maximos_anio',
-      'requiere_aprobacion',
       'requiere_documento',
       'activo',
     });
@@ -145,31 +143,23 @@ void main() {
     );
   });
 
-  testWidgets('validaciones: nombre vacío, código repetido y tope', (
-    tester,
-  ) async {
+  testWidgets('validaciones: nombre vacío y tope', (tester) async {
     await _abrir(tester, 'Permiso personal');
 
     await tester.enterText(
       find.widgetWithText(TextFormField, 'Permiso personal'),
       '',
     );
-    // El código se escribe en mayúsculas solo.
-    await tester.enterText(find.widgetWithText(TextFormField, 'PER'), 'med');
     // El tope está vacío (sin tope): es el tercer campo del formulario.
     await tester.enterText(find.byType(TextFormField).at(2), '400');
     await tester.pump();
-    expect(find.widgetWithText(TextFormField, 'MED'), findsOneWidget);
+    expect(find.widgetWithText(TextFormField, 'PER'), findsOneWidget);
 
     await tester.tap(_guardar);
     await tester.pumpAndSettle();
 
     expect(
       find.text('Escribe el nombre del tipo de ausencia.'),
-      findsOneWidget,
-    );
-    expect(
-      find.text('Ya hay otro tipo de ausencia con el código MED.'),
       findsOneWidget,
     );
     expect(find.textContaining('El tope va de 1 a 365 días'), findsOneWidget);
@@ -257,7 +247,7 @@ void main() {
     );
   });
 
-  test('las rutas: GET con inactivos y PUT con las ocho columnas', () async {
+  test('las rutas: GET de configuración y PUT de campos editables', () async {
     final peticiones = <PeticionFalsa>[];
     final servicio = TiposAusenciaService(
       clienteFalso((p) {
@@ -283,10 +273,10 @@ void main() {
 
     expect(tipos.single.codigo, 'VAC');
     expect(peticiones.map((p) => '$p'), [
-      'GET /personal/tipos-ausencia',
+      'GET /personal/tipos-ausencia/configuracion',
       'PUT /personal/tipos-ausencia/t1',
     ]);
-    expect(peticiones.first.query, {'incluir_inactivos': 'true'});
+    expect(peticiones.first.query, isEmpty);
     expect(peticiones.last.cuerpo!.containsKey('empresa_id'), isFalse);
     expect(peticiones.last.cuerpo!['dias_maximos_anio'], 20);
     expect(guardado.nombre, 'Vacación anual');

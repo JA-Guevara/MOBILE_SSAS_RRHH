@@ -391,7 +391,7 @@ class _FormularioState extends State<_Formulario> {
                 // ------------------------------- días (se calculan solos)
                 const EtiquetaCampo(
                   texto: 'Días solicitados',
-                  ayuda: 'se calculan solos, de lunes a viernes',
+                  ayuda: 'se calculan solos según las fechas',
                 ),
                 const SizedBox(height: 6),
                 _DiasSolicitados(dias: dias),
@@ -409,7 +409,7 @@ class _FormularioState extends State<_Formulario> {
                     saldo?.diasSaldo != null) ...[
                   const SizedBox(height: 8),
                   _Aviso(
-                    texto: _textoRestante(saldo!.diasSaldo! - dias),
+                    texto: 'El saldo se verificará al aprobar la solicitud según los días hábiles de vacación.',
                     icono: Icons.beach_access_outlined,
                     fondo: AppColors.verde100,
                     color: AppColors.verde600,
@@ -482,14 +482,6 @@ class _FormularioState extends State<_Formulario> {
   }
 }
 
-/// "Si tu jefe la aprueba, te quedarán 2 días de vacación."
-String _textoRestante(double restante) {
-  final dias = SaldoVacacion.dias(restante);
-  return restante == 1
-      ? 'Si tu jefe la aprueba, te quedará 1 día de vacación.'
-      : 'Si tu jefe la aprueba, te quedarán $dias días de vacación.';
-}
-
 /// La caja de días: parece un campo, pero no se escribe; la llena el rango.
 class _DiasSolicitados extends StatelessWidget {
   final int? dias;
@@ -501,7 +493,7 @@ class _DiasSolicitados extends StatelessWidget {
     final d = dias;
     final texto = switch (d) {
       null => 'Elige las fechas',
-      1 => '1 día hábil',
+      1 => '1 día',
       _ => '$d días',
     };
 

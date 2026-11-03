@@ -56,11 +56,11 @@ class _AsistenciaPageState extends State<AsistenciaPage> {
     _cargarDia();
   }
 
-  Future<void> _cargarDia() async {
+  Future<void> _cargarDia({bool limpiarAviso = true}) async {
     setState(() {
       _cargando = true;
       _errorCarga = null;
-      _aviso = null;
+      if (limpiarAviso) _aviso = null;
     });
 
     try {
@@ -177,7 +177,7 @@ class _AsistenciaPageState extends State<AsistenciaPage> {
       });
       // Si el backend rechazó por "una marca por día", el día real puede ser
       // distinto del que tenemos: se vuelve a consultar para no mentir.
-      await _cargarDia();
+      await _cargarDia(limpiarAviso: false);
     }
   }
 
@@ -217,7 +217,7 @@ class _AsistenciaPageState extends State<AsistenciaPage> {
     // Estado 4: no se pudo consultar el día
     final error = _errorCarga;
     if (error != null) {
-      return _EstadoError(mensaje: error, onReintentar: _cargarDia);
+      return _EstadoError(mensaje: error, onReintentar: () => _cargarDia());
     }
     // Estados 2 y 3: con marcas o sin ellas. La diferencia la pinta
     // ResumenDia con "—:— a —:—", como en la maqueta.

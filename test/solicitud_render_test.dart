@@ -115,13 +115,14 @@ void main() {
         ),
         isNull,
       );
+      // El servidor valida el saldo al guardar; el cliente no inventa el descuento.
       expect(
         NuevaSolicitud.problemaConLosDias(
           tipo: vacacion,
           dias: 5,
           saldo: saldo,
         ),
-        'Saldo insuficiente: pides 5 días hábiles y tienes 3 disponibles.',
+        isNull,
       );
       expect(
         NuevaSolicitud.problemaConLosDias(tipo: vacacion, dias: 2, saldo: null),
@@ -199,9 +200,9 @@ void main() {
     expect(find.text('02/11/2026'), findsOneWidget);
     expect(find.text('03/11/2026'), findsOneWidget);
     // Los días se calculan solos y avisa cuánto le quedará.
-    expect(find.text('2 días hábiles'), findsOneWidget);
+    expect(find.text('2 días'), findsOneWidget);
     expect(
-      find.text('Si tu jefe la aprueba, te quedará 1 día de vacación.'),
+      find.textContaining('El saldo se verificará al aprobar'),
       findsOneWidget,
     );
 
@@ -211,7 +212,7 @@ void main() {
     expect(find.text('Solicitud enviada'), findsOneWidget);
     expect(find.text('Pendiente de aprobación'), findsOneWidget);
     expect(find.text('02/11 al 03/11'), findsOneWidget);
-    expect(find.text('2 días hábiles'), findsOneWidget);
+    expect(find.text('2 días'), findsOneWidget);
 
     // "Hacer otra solicitud" vuelve al formulario vacío.
     await tester.tap(find.text('Hacer otra solicitud'));
@@ -220,27 +221,21 @@ void main() {
     expect(find.text('Elige las fechas'), findsOneWidget);
   });
 
-  testWidgets('saldo insuficiente: avisa y no envía', (tester) async {
+  testWidgets('el saldo se revisa al aprobar la vacación', (tester) async {
     _lienzoAlto(tester);
     await tester.pumpWidget(_pagina(SolicitudesServiceFalso()));
     await tester.pumpAndSettle();
 
     await _elegirTipo(tester, 'Vacación');
     await _elegirFechas(tester, 2, 6);
-    expect(find.text('5 días hábiles'), findsOneWidget);
-    expect(
-      find.text(
-        'Saldo insuficiente: pides 5 días hábiles y tienes 3 disponibles.',
-      ),
-      findsOneWidget,
-    );
+    expect(find.text('5 días'), findsOneWidget);
 
     await _escribirMotivo(tester, 'Viaje familiar.');
     await _enviar(tester);
 
-    // Se frenó en el teléfono: ni se envió ni llegó el 422 del backend.
-    expect(find.text('Solicitud enviada'), findsNothing);
-    expect(find.textContaining('tienes 3 días y pides 5'), findsNothing);
+    // Registrar días calendario no descuenta todavía el saldo.
+    expect(find.text('Solicitud enviada'), findsOneWidget);
+    expect(find.textContaining('Saldo insuficiente'), findsNothing);
   });
 
   testWidgets('el tipo exige documento: aparece el adjunto y es obligatorio', (
@@ -259,7 +254,7 @@ void main() {
     expect(find.text('Adjuntar documento'), findsOneWidget);
 
     await _elegirFechas(tester, 2, 2);
-    expect(find.text('1 día hábil'), findsOneWidget);
+    expect(find.text('1 día'), findsOneWidget);
     await _escribirMotivo(tester, 'Reposo indicado por el médico.');
     await _enviar(tester);
 
@@ -278,12 +273,7 @@ void main() {
     await _elegirTipo(tester, 'Permiso personal');
     await _elegirFechas(tester, 7, 8);
 
-    expect(
-      find.text(
-        'Las fechas elegidas no tienen días hábiles (de lunes a viernes).',
-      ),
-      findsOneWidget,
-    );
+    expect(find.text('2 días'), findsOneWidget);
   });
 
   testWidgets('error al enviar: aviso rojo y el formulario no se pierde', (
@@ -303,7 +293,7 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Viaje familiar.'), findsOneWidget);
-    expect(find.text('2 días hábiles'), findsOneWidget);
+    expect(find.text('2 días'), findsOneWidget);
     expect(find.text('Enviar solicitud'), findsOneWidget);
   });
 
@@ -363,8 +353,8 @@ void main() {
       await servicio.opciones();
 
       expect(peticiones.map((p) => p.ruta), [
-        '/tipos-ausencia',
-        '/saldos-vacacion/mio',
+        '/personal/tipos-ausencia',
+        '/personal/mi/vacaciones',
       ]);
       expect(peticiones.every((p) => p.query.isEmpty), isTrue);
     });
@@ -372,13 +362,15 @@ void main() {
     test('el saldo puede llegar como una sola fila', () async {
       final servicio = SolicitudesService(
         clienteFalso(
-          (p) => p.ruta == '/saldos-vacacion/mio'
-              ? {
-                  'id': 's1',
-                  'gestion': 2026,
-                  'dias_asignados': 15,
-                  'dias_saldo': 9,
-                }
+          (p) => p.ruta == '/personal/mi/vacaciones'
+              ? [
+                  {
+                    'id': 's1',
+                    'gestion': 2026,
+                    'dias_asignados': 15,
+                    'dias_saldo': 9,
+                  },
+                ]
               : const <Object>[],
           demora: Duration.zero,
         ),
@@ -391,12 +383,14 @@ void main() {
     });
 
     test(
-      'envía multipart con los campos y el documento, sin empleado_id',
+      'sube el documento y luego crea la solicitud sin empleado_id',
       () async {
-        PeticionFalsa? recibida;
+        final peticiones = <PeticionFalsa>[];
         final servicio = SolicitudesService(
           clienteFalso((p) {
-            recibida = p;
+            peticiones.add(p);
+            if (p.es('POST', '/personal/mi/documentos')) return {'id': 'doc1'};
+            if (p.es('GET', '/personal/mi/ausencias')) return const <Object>[];
             return {'id': 'n1', 'estado': 'PENDIENTE', 'dias_solicitados': 1};
           }, demora: Duration.zero),
           sesionFalsa(),
@@ -419,17 +413,20 @@ void main() {
           ),
         );
 
-        expect(recibida!.metodo, 'POST');
-        expect(recibida!.ruta, '/solicitudes-ausencia');
-        expect(recibida!.campos, {
+        final documento = peticiones.first;
+        expect(documento.ruta, '/personal/mi/documentos');
+        expect(documento.archivos['archivo']?.nombre, 'certificado.pdf');
+        expect(documento.archivos['archivo']?.bytes, 4);
+        final recibida = peticiones[1];
+        expect(recibida.metodo, 'POST');
+        expect(recibida.ruta, '/personal/mi/ausencias');
+        expect(recibida.cuerpo, {
           'tipo_ausencia_id': 't2',
           'fecha_inicio': '2026-11-02',
           'fecha_fin': '2026-11-02',
-          'dias_solicitados': '1',
           'motivo': 'Reposo médico.',
+          'documento_id': 'doc1',
         });
-        expect(recibida!.archivos['documento']?.nombre, 'certificado.pdf');
-        expect(recibida!.archivos['documento']?.bytes, 4);
         expect(creada.estaPendiente, isTrue);
         expect(creada.tipo?.nombre, 'Baja médica');
       },
@@ -456,7 +453,7 @@ void main() {
       );
 
       await expectLater(
-        cliente.postMultipart('/solicitudes-ausencia', campos: const {}),
+        cliente.post('/personal/mi/ausencias', body: const {}),
         throwsA(
           isA<AppException>()
               .having((e) => e.statusCode, 'statusCode', 422)

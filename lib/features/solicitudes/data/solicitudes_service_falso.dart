@@ -54,8 +54,8 @@ class SolicitudesServiceVacio extends SolicitudesService {
     : super(
         clienteFalso(
           (p) => switch (p.ruta) {
-            '/tipos-ausencia' => const <Object>[],
-            '/saldos-vacacion/mio' => _saldos,
+            '/personal/tipos-ausencia' => const <Object>[],
+            '/personal/mi/vacaciones' => _saldos,
             _ => throw ErrorFalso.rutaDesconocida(p),
           },
           demora: const Duration(milliseconds: 500),
@@ -96,16 +96,22 @@ class SolicitudesServiceSinSesion extends SolicitudesService {
 class _BackendSolicitudes {
   final bool conSaldo;
   final bool falloAlEnviar;
+  Map<String, Object?>? creada;
 
   _BackendSolicitudes({this.conSaldo = true, this.falloAlEnviar = false});
 
   Object? responder(PeticionFalsa p) {
-    if (p.es('GET', '/tipos-ausencia')) return _tipos;
-    if (p.es('GET', '/saldos-vacacion/mio')) {
-      if (!conSaldo) throw const ErrorFalso(404, 'Sin saldo de vacaciones.');
-      return _saldos;
+    if (p.es('GET', '/personal/tipos-ausencia')) return _tipos;
+    if (p.es('GET', '/personal/mi/vacaciones')) {
+      return conSaldo ? _saldos : const <Object>[];
     }
-    if (p.es('POST', '/solicitudes-ausencia')) return _crear(p);
+    if (p.es('POST', '/personal/mi/documentos')) {
+      return {'id': 'documento-nuevo'};
+    }
+    if (p.es('POST', '/personal/mi/ausencias')) return _crear(p);
+    if (p.es('GET', '/personal/mi/ausencias')) {
+      return creada == null ? const <Object>[] : [creada!];
+    }
     throw ErrorFalso.rutaDesconocida(p);
   }
 
@@ -119,25 +125,16 @@ class _BackendSolicitudes {
       );
     }
 
-    final c = p.campos;
+    final c = p.cuerpo ?? const <String, Object?>{};
     final tipo = _tipos.where((t) => t['id'] == c['tipo_ausencia_id']);
     if (tipo.isEmpty || tipo.first['activo'] != true) {
       throw const ErrorFalso(422, 'El tipo de ausencia no es válido.');
     }
-    final dias = int.tryParse(c['dias_solicitados'] ?? '') ?? 0;
+    final inicio = DateTime.parse(c['fecha_inicio'].toString());
+    final fin = DateTime.parse(c['fecha_fin'].toString());
+    final dias = fin.difference(inicio).inDays + 1;
 
-    // El saldo nunca queda negativo (caso 4 de T3-23).
-    if (tipo.first['descuenta_vacacion'] == true) {
-      final saldo = conSaldo ? _saldos.last['dias_saldo'] as int : 0;
-      if (dias > saldo) {
-        throw ErrorFalso(
-          422,
-          'Saldo insuficiente: tienes $saldo días y pides $dias.',
-        );
-      }
-    }
-
-    final documento = p.archivos['documento'];
+    final documento = c['documento_id'];
     if (tipo.first['requiere_documento'] == true && documento == null) {
       throw const ErrorFalso(
         422,
@@ -145,7 +142,7 @@ class _BackendSolicitudes {
       );
     }
 
-    return {
+    creada = {
       'id': 'sol-nueva',
       'empresa_id': 'emp1',
       'empleado_id': 'e7',
@@ -155,14 +152,13 @@ class _BackendSolicitudes {
       'fecha_fin': c['fecha_fin'],
       'dias_solicitados': dias,
       'motivo': c['motivo'],
-      'documento_url': documento == null
-          ? null
-          : 'https://falso/documentos/${documento.nombre}',
+      'documento_id': documento,
       'estado': 'PENDIENTE',
       'observacion_aprobador': null,
       'fecha_solicitud': DateTime.now().toIso8601String(),
       'fecha_respuesta': null,
     };
+    return creada!;
   }
 }
 

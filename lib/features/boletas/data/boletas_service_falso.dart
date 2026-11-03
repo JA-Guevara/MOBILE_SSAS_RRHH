@@ -24,16 +24,17 @@ class BoletasServiceFalso extends BoletasService {
   BoletasServiceFalso() : super(clienteFalso(_responder), sesionFalsa());
 
   static Object? _responder(PeticionFalsa p) {
-    if (p.es('GET', '/boletas')) return [_julio, _agosto, _junio];
-    if (p.es('GET', '/periodos-nomina')) return _periodos;
+    if (p.es('GET', '/nomina/mi/boletas')) return [_julio, _agosto, _junio];
+    if (p.es('GET', '/nomina/periodos')) return _periodos;
 
     for (final boleta in [_agosto, _julio, _junio]) {
       final id = boleta['id'];
-      if (p.es('GET', '/boletas/$id')) return boleta;
-      if (p.es('GET', '/boletas/$id/detalles')) return _lineas(id as String);
+      if (p.es('GET', '/nomina/mi/boletas/$id')) {
+        return {...boleta, 'detalle': _lineas(id as String)};
+      }
     }
 
-    if (p.metodo == 'GET' && p.ruta.startsWith('/boletas/')) {
+    if (p.metodo == 'GET' && p.ruta.startsWith('/nomina/mi/boletas/')) {
       throw const ErrorFalso(404, 'La boleta no existe.');
     }
     throw ErrorFalso.rutaDesconocida(p);
@@ -266,7 +267,9 @@ class BoletasServiceVacio extends BoletasService {
   BoletasServiceVacio()
     : super(
         clienteFalso(
-          (p) => p.es('GET', '/periodos-nomina') || p.es('GET', '/boletas')
+          (p) =>
+              p.es('GET', '/nomina/periodos') ||
+                  p.es('GET', '/nomina/mi/boletas')
               ? const <Object>[]
               : throw ErrorFalso.rutaDesconocida(p),
           demora: const Duration(milliseconds: 500),
@@ -282,7 +285,7 @@ class BoletasServiceError extends BoletasService {
         clienteFalso(
           (p) => throw ErrorFalso(
             503,
-            p.ruta.startsWith('/boletas/')
+            p.ruta.startsWith('/nomina/mi/boletas/')
                 ? 'No se pudo cargar el detalle de la boleta. '
                       'Revisa tu conexión e inténtalo de nuevo.'
                 : 'No se pudieron cargar tus boletas. '

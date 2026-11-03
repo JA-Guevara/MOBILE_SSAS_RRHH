@@ -102,7 +102,7 @@ class _BackendTipos {
   final _filas = [for (final t in _tipos) Map<String, Object?>.of(t)];
 
   Object? responder(PeticionFalsa p) {
-    if (p.es('GET', '/personal/tipos-ausencia')) return _filas;
+    if (p.es('GET', '/personal/tipos-ausencia/configuracion')) return _filas;
 
     const prefijo = '/personal/tipos-ausencia/';
     if (p.metodo == 'PUT' && p.ruta.startsWith(prefijo)) {

@@ -156,32 +156,38 @@ void main() {
     expect(find.textContaining('Tu sesión expiró'), findsOneWidget);
   });
 
-  test('pide el mes por query, sin empleado_id, y no mezcla meses', () async {
-    final peticiones = <PeticionFalsa>[];
-    final servicio = MisDiasService(
-      clienteFalso((p) {
-        peticiones.add(p);
-        if (p.ruta == '/saldos-vacacion/mio') return const <Object>[];
-        // Un backend que ignora el filtro y manda otro mes de más.
-        return [
-          {'id': 'a', 'fecha': '2026-10-02', 'hora_entrada': '08:00:00'},
-          {'id': 'b', 'fecha': '2026-09-30', 'hora_entrada': '08:00:00'},
-          {'id': 'c', 'fecha': '2026-10-09', 'hora_entrada': '08:00:00'},
-        ];
-      }, demora: Duration.zero),
-      sesionFalsa(),
-    );
+  test(
+    'filtra el mes sin empleado_id aunque el backend devuelva varios meses',
+    () async {
+      final peticiones = <PeticionFalsa>[];
+      final servicio = MisDiasService(
+        clienteFalso((p) {
+          peticiones.add(p);
+          if (p.ruta == '/personal/mi/vacaciones') return const <Object>[];
+          // Un backend que ignora el filtro y manda otro mes de más.
+          return [
+            {'id': 'a', 'fecha': '2026-10-02', 'hora_entrada': '08:00:00'},
+            {'id': 'b', 'fecha': '2026-09-30', 'hora_entrada': '08:00:00'},
+            {'id': 'c', 'fecha': '2026-10-09', 'hora_entrada': '08:00:00'},
+          ];
+        }, demora: Duration.zero),
+        sesionFalsa(),
+      );
 
-    final mes = await servicio.delMes(DateTime(2026, 10, 17));
+      final mes = await servicio.delMes(DateTime(2026, 10, 17));
 
-    final asistencia = peticiones.firstWhere(
-      (p) => p.ruta == '/asistencias/mias',
-    );
-    expect(asistencia.query, {'mes': '2026-10'});
-    expect(peticiones.any((p) => p.query.containsKey('empleado_id')), isFalse);
+      final asistencia = peticiones.firstWhere(
+        (p) => p.ruta == '/personal/mi/asistencia',
+      );
+      expect(asistencia.query, isEmpty);
+      expect(
+        peticiones.any((p) => p.query.containsKey('empleado_id')),
+        isFalse,
+      );
 
-    expect(mes.mes, DateTime(2026, 10));
-    expect(mes.dias.map((d) => d.id), ['c', 'a']);
-    expect(mes.saldo, isNull);
-  });
+      expect(mes.mes, DateTime(2026, 10));
+      expect(mes.dias.map((d) => d.id), ['c', 'a']);
+      expect(mes.saldo, isNull);
+    },
+  );
 }

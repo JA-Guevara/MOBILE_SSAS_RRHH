@@ -164,7 +164,10 @@ void main() {
 
     final historial = await servicio.historial();
 
-    expect(peticiones.map((p) => p.ruta), ['/contratos/mios', '/cargos']);
+    expect(peticiones.map((p) => p.ruta), [
+      '/personal/mi/contratos',
+      '/cargos',
+    ]);
     expect(peticiones.every((p) => p.query.isEmpty), isTrue);
     expect(historial.vigente?.id, 'c');
     expect(historial.anteriores.map((c) => c.id), ['b', 'a']);

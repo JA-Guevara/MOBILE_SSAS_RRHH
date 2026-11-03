@@ -27,7 +27,7 @@ Map<String, dynamic> _filaConEntrada({
 }) => {
   'id': 'a1b2c3d4-0001',
   'empleado_id': 'e7',
-  'fecha': '2026-08-29',
+  'fecha': DateTime.now().toIso8601String().substring(0, 10),
   'hora_entrada': '08:03:00',
   'hora_salida': null,
   'latitud_entrada': latitud,
@@ -64,23 +64,22 @@ class _DiaFalso {
   _DiaFalso(this.fila);
 
   Object? responder(PeticionFalsa p) {
-    if (p.es('GET', '/asistencias/hoy')) {
-      if (fila == null) throw const ErrorFalso(404, 'Sin marca hoy.');
-      return fila;
+    if (p.es('GET', '/personal/mi/asistencia')) {
+      return fila == null ? [] : [fila];
     }
 
-    if (p.es('POST', '/asistencias/entrada')) {
+    if (p.es('POST', '/personal/mi/asistencia/entrada')) {
       if (fila != null) {
         throw const ErrorFalso(409, 'Ya marcaste tu entrada hoy.');
       }
       final c = p.cuerpo ?? const {};
       return fila = _filaConEntrada(
-        latitud: (c['latitud_entrada'] as num).toDouble(),
-        longitud: (c['longitud_entrada'] as num).toDouble(),
+        latitud: (c['latitud'] as num).toDouble(),
+        longitud: (c['longitud'] as num).toDouble(),
       );
     }
 
-    if (p.es('POST', '/asistencias/salida')) {
+    if (p.es('POST', '/personal/mi/asistencia/salida')) {
       final actual = fila;
       if (actual == null) {
         throw const ErrorFalso(409, 'Todavía no marcaste tu entrada de hoy.');
@@ -91,8 +90,8 @@ class _DiaFalso {
       final c = p.cuerpo ?? const {};
       return fila = _conSalida(
         actual,
-        latitud: (c['latitud_salida'] as num).toDouble(),
-        longitud: (c['longitud_salida'] as num).toDouble(),
+        latitud: (c['latitud'] as num).toDouble(),
+        longitud: (c['longitud'] as num).toDouble(),
       );
     }
 
