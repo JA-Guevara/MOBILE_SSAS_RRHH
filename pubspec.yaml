@@ -52,6 +52,10 @@ dependencies:
   geolocator: ^14.0.3
   # T3-27: abrir el archivo de un documento del legajo.
   url_launcher: ^6.3.3
+  firebase_core: ^5.2.0
+  firebase_messaging: ^17.1.0
+  path_provider: ^2.1.6
+  open_filex: ^5.0.0
 
 dev_dependencies:
   flutter_test:

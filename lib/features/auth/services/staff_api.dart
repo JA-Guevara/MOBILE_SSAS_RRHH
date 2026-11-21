@@ -67,6 +67,103 @@ class StaffApi {
       (await _authorized('GET', '/notificaciones/mi') as List)
           .cast<Map<String, dynamic>>();
 
+  Future<Map<String, dynamic>> markNotificationRead(String id) async =>
+      await _authorized('PATCH', '/notificaciones/$id/leer')
+          as Map<String, dynamic>;
+
+  Future<void> markAllNotificationsRead() async =>
+      _authorized('POST', '/notificaciones/leer-todas');
+
+  Future<void> registerDevice(String token) async => _authorized(
+    'POST',
+    '/notificaciones/dispositivos',
+    body: {'token': token},
+  );
+
+  Future<void> unregisterDevice(String token) async => _authorized(
+    'DELETE',
+    '/notificaciones/dispositivos/${Uri.encodeComponent(token)}',
+  );
+
+  Future<List<Map<String, dynamic>>> mySkills() async =>
+      (await _authorized('GET', '/capacitacion/mis-habilidades') as List)
+          .cast<Map<String, dynamic>>();
+
+  Future<Map<String, dynamic>> indicators(
+    String from,
+    String to, {
+    String? companyId,
+  }) async => await _authorized(
+    'GET',
+    '/indicadores',
+    query: {
+      'desde': from,
+      'hasta': to,
+      if (companyId != null) 'empresa_id': companyId,
+    },
+  ) as Map<String, dynamic>;
+
+  Future<Uint8List> certificate(String enrollmentId) => downloadProtected(
+    '/capacitacion/inscripciones/$enrollmentId/certificado',
+    mimePrefix: 'application/pdf',
+  );
+
+  Future<Uint8List> downloadProtected(String path, {String? mimePrefix}) async {
+    var access = await _storage.read(key: _accessKey);
+    if (access == null) throw const StaffApiException(401, 'Inicia sesión.');
+    Future<http.Response> request(String token) => _client
+        .get(_uri(path), headers: {'authorization': 'Bearer $token'})
+        .timeout(const Duration(seconds: 30));
+    try {
+      var response = await request(access);
+      if (response.statusCode == 401) {
+        response = await request(await _refresh());
+      }
+      if (response.statusCode != 200) {
+        throw StaffApiException(
+          response.statusCode,
+          'No se pudo descargar el certificado.',
+        );
+      }
+      if (mimePrefix != null &&
+          !response.headers['content-type'].toString().contains(mimePrefix)) {
+        throw const StaffApiException(
+          502,
+          'El servidor devolvió un tipo de archivo inesperado.',
+        );
+      }
+      return response.bodyBytes;
+    } on StaffApiException {
+      rethrow;
+    } on Exception {
+      throw const StaffApiException(0, 'No se pudo conectar con el servidor.');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> myCourses() async =>
+      (await _authorized('GET', '/capacitacion/mis-cursos') as List)
+          .cast<Map<String, dynamic>>();
+
+  Future<Map<String, dynamic>> course(String id) async =>
+      await _authorized('GET', '/capacitacion/cursos/$id')
+          as Map<String, dynamic>;
+
+  Future<List<Map<String, dynamic>>> lessons(String courseId) async =>
+      (await _authorized(
+        'GET',
+        '/capacitacion/cursos/$courseId/lecciones',
+      ) as List).cast<Map<String, dynamic>>();
+
+  Future<Map<String, dynamic>> completeLesson(
+    String enrollmentId,
+    String lessonId, {
+    List<int>? answers,
+  }) async => await _authorized(
+    'POST',
+    '/capacitacion/inscripciones/$enrollmentId/lecciones/$lessonId/completar',
+    body: {'respuestas': answers},
+  ) as Map<String, dynamic>;
+
   Future<List<String>> chatbotSuggestions() async =>
       (await _authorized('GET', '/chatbot/sugerencias') as List).cast<String>();
 
@@ -376,6 +473,7 @@ class StaffApi {
           headers: headers,
           body: jsonEncode(body ?? const <String, Object?>{}),
         ),
+        'DELETE' => _client.delete(uri, headers: headers),
         _ => _client.post(
           uri,
           headers: headers,
