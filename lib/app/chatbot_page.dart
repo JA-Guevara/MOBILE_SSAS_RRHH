@@ -163,6 +163,9 @@ class _ChatbotPageState extends State<ChatbotPage> {
         '/postulantes',
         '/vacantes',
         '/seleccion',
+        '/personal/ausencias/mi',
+        '/nomina/mis-boletas',
+        '/capacitacion/mis-habilidades',
       }.contains(route);
     }
     final parts = Uri.parse(route).pathSegments;
@@ -220,11 +223,28 @@ class _ChatbotPageState extends State<ChatbotPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Asistente RRHH')),
+    backgroundColor: const Color(0xFFF5F7F3),
+    appBar: AppBar(
+      backgroundColor: const Color(0xFF153F30),
+      foregroundColor: Colors.white,
+      title: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Asistente RRHH',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          Text(
+            'Guías y respuestas de tu empresa',
+            style: TextStyle(fontSize: 11, color: Color(0xFFCAE5D4)),
+          ),
+        ],
+      ),
+    ),
     body: SafeArea(
       child: Column(
         children: [
-          if (_suggestions.isNotEmpty)
+          if (_suggestions.isNotEmpty && _messages.isNotEmpty)
             SizedBox(
               height: 52,
               child: ListView.separated(
@@ -243,16 +263,71 @@ class _ChatbotPageState extends State<ChatbotPage> {
               controller: _scroll,
               padding: const EdgeInsets.all(16),
               children: [
-                if (_messages.isEmpty)
-                  const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Card(
-                      child: Padding(
-                        padding: EdgeInsets.all(12),
-                        child: Text('Hola. ¿En qué puedo ayudarte?'),
+                if (_messages.isEmpty) ...[
+                  const SizedBox(height: 32),
+                  Center(
+                    child: Container(
+                      width: 64,
+                      height: 64,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE0F2E7),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Icon(
+                        Icons.auto_awesome,
+                        color: Color(0xFF16845B),
+                        size: 30,
                       ),
                     ),
                   ),
+                  const SizedBox(height: 18),
+                  const Text(
+                    '¿En qué te ayudo hoy?',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: 'serif',
+                      fontSize: 27,
+                      color: Color(0xFF153F30),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    widget.staffApi == null
+                        ? 'Consulta vacantes y la información pública de esta empresa.'
+                        : 'Te guío por los procesos y la información de tu empresa.',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Color(0xFF697B70)),
+                  ),
+                  const SizedBox(height: 25),
+                  for (final suggestion in _suggestions.take(6))
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Card(
+                        color: Colors.white,
+                        child: ListTile(
+                          leading: const Icon(
+                            Icons.chat_bubble_outline,
+                            color: Color(0xFF16845B),
+                          ),
+                          title: Text(
+                            suggestion,
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                          trailing: const Icon(Icons.north_east, size: 17),
+                          onTap: _loading ? null : () => _send(suggestion),
+                        ),
+                      ),
+                    ),
+                  const Padding(
+                    padding: EdgeInsets.only(top: 14),
+                    child: Text(
+                      'Evita compartir datos personales en el chat.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 11, color: Color(0xFF839288)),
+                    ),
+                  ),
+                ],
                 for (final item in _messages)
                   Align(
                     alignment: item.fromUser
@@ -261,25 +336,60 @@ class _ChatbotPageState extends State<ChatbotPage> {
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 340),
                       child: Card(
-                        color: item.fromUser ? const Color(0xFFDCF1E7) : null,
+                        color: item.fromUser
+                            ? const Color(0xFF176B4D)
+                            : Colors.white,
                         child: Padding(
                           padding: const EdgeInsets.all(12),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(item.text),
+                              if (!item.fromUser)
+                                const Padding(
+                                  padding: EdgeInsets.only(bottom: 7),
+                                  child: Text(
+                                    '✦ ASISTENTE',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      letterSpacing: 1,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF16845B),
+                                    ),
+                                  ),
+                                ),
+                              Text(
+                                item.text,
+                                style: TextStyle(
+                                  color: item.fromUser
+                                      ? Colors.white
+                                      : const Color(0xFF263E33),
+                                  height: 1.45,
+                                ),
+                              ),
                               if (item.sources.isNotEmpty) ...[
-                                const SizedBox(height: 8),
+                                const SizedBox(height: 12),
+                                const Text(
+                                  'BASADO EN',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    letterSpacing: 1,
+                                    color: Color(0xFF728779),
+                                  ),
+                                ),
                                 for (final source in item.sources)
-                                  TextButton(
+                                  TextButton.icon(
                                     onPressed: () => _openSource(source),
-                                    child: Text(source.title),
+                                    icon: const Icon(
+                                      Icons.menu_book_outlined,
+                                      size: 16,
+                                    ),
+                                    label: Text(source.title),
                                   ),
                               ],
                               if (item.links.isNotEmpty) ...[
                                 const SizedBox(height: 8),
                                 for (final link in item.links)
-                                  TextButton.icon(
+                                  FilledButton.tonalIcon(
                                     onPressed: () => _openLink(link),
                                     icon: Icon(
                                       _canOpenRoute(link.route)
@@ -299,7 +409,17 @@ class _ChatbotPageState extends State<ChatbotPage> {
                 if (_loading)
                   const Padding(
                     padding: EdgeInsets.all(8),
-                    child: LinearProgressIndicator(),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                        SizedBox(width: 10),
+                        Text('Buscando una respuesta…'),
+                      ],
+                    ),
                   ),
                 if (_error != null)
                   Text(_error!, style: const TextStyle(color: Colors.red)),
@@ -315,7 +435,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
                     controller: _controller,
                     maxLength: 350,
                     decoration: const InputDecoration(
-                      hintText: 'Escribe tu pregunta',
+                      hintText: 'Pregúntame lo que necesitas…',
                       counterText: '',
                     ),
                     textInputAction: TextInputAction.send,

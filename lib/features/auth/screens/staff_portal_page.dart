@@ -12,6 +12,7 @@ import 'package:mobile_ssas_rrhh/features/auth/storage/token_storage.dart';
 import 'package:mobile_ssas_rrhh/features/capacitacion/my_courses_page.dart';
 import 'package:mobile_ssas_rrhh/features/capacitacion/my_skills_page.dart';
 import 'package:mobile_ssas_rrhh/features/reportes/indicators_page.dart';
+import 'package:mobile_ssas_rrhh/features/dashboard/dashboard_page.dart';
 import 'package:mobile_ssas_rrhh/features/notifications/push_registration.dart';
 import 'package:mobile_ssas_rrhh/shared/api/http_client.dart';
 import 'package:mobile_ssas_rrhh/features/asistencia/data/asistencia_service.dart';
@@ -112,6 +113,10 @@ class _StaffPortalPageState extends State<StaffPortalPage>
   bool get _puedeVerReportes =>
       _permisos.contains('reportes:ver') ||
       _permisos.contains('platform:reportes:gestionar');
+
+  bool get _puedeVerDashboard =>
+      _permisos.contains('empresa:ver') ||
+      _permisos.contains('platform:empresas:ver');
 
   bool get _puedeVerRespaldos =>
       !_esPlataforma && _permisos.contains('backup:ver');
@@ -282,6 +287,29 @@ class _StaffPortalPageState extends State<StaffPortalPage>
           Navigator.of(context).push(
             MaterialPageRoute<void>(builder: (_) => PostulantesPage(api: _api)),
           );
+          return;
+        }
+      case '/personal/ausencias/mi':
+        if (!_esPlataforma && _permiso('ausencias:solicitar')) {
+          _abrirPersonal(
+            SolicitarAusenciaPage(
+              service: SolicitudesService(_clientePersonal, _tokenPersonal),
+            ),
+          );
+          return;
+        }
+      case '/nomina/mis-boletas':
+        if (!_esPlataforma && _permiso('boletas:mi')) {
+          _abrirPersonal(
+            BoletasPage(
+              service: BoletasService(_clientePersonal, _tokenPersonal),
+            ),
+          );
+          return;
+        }
+      case '/capacitacion/mis-habilidades':
+        if (!_esPlataforma && _permiso('capacitacion:aprender')) {
+          _abrirPersonal(MySkillsPage(api: _api));
           return;
         }
       case '/vacantes':
@@ -501,6 +529,37 @@ class _StaffPortalPageState extends State<StaffPortalPage>
           Text(_error!, style: const TextStyle(color: Colors.red)),
         if (_permisos.isEmpty)
           const Text('Tu cuenta no tiene funciones asignadas.'),
+        if (_puedeVerDashboard)
+          Card(
+            color: const Color(0xFF153F30),
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 18,
+                vertical: 10,
+              ),
+              leading: const Icon(
+                Icons.space_dashboard_rounded,
+                color: Color(0xFFAFE0BE),
+              ),
+              title: const Text(
+                'Dashboard',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              subtitle: const Text(
+                'Indicadores y actividad en vivo',
+                style: TextStyle(color: Color(0xFFD4E9D9)),
+              ),
+              trailing: const Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: Colors.white,
+                size: 16,
+              ),
+              onTap: () => _abrirPersonal(DashboardPage(api: _api)),
+            ),
+          ),
         if (_puedeVerSuscripcion)
           ListTile(
             leading: const Icon(Icons.credit_card_outlined),
